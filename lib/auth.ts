@@ -1,7 +1,8 @@
-import jwt from "jsonwebtoken";
+import { jwtVerify, SignJWT } from "jose";
 import { NextRequest } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+const encodedKey = new TextEncoder().encode(JWT_SECRET);
 
 export interface JWTPayload {
   userId: string;
@@ -14,10 +15,10 @@ export interface JWTPayload {
 /**
  * Verify JWT token and return payload
  */
-export function verifyToken(token: string): JWTPayload | null {
+export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
-    return decoded;
+    const { payload } = await jwtVerify(token, encodedKey);
+    return payload as unknown as JWTPayload;
   } catch (error) {
     console.error("Token verification failed:", error);
     return null;
@@ -27,8 +28,12 @@ export function verifyToken(token: string): JWTPayload | null {
 /**
  * Generate JWT token
  */
-export function generateToken(payload: Omit<JWTPayload, "iat" | "exp">): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: "7d" });
+export async function generateToken(payload: Omit<JWTPayload, "iat" | "exp">): Promise<string> {
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("1h") // Token expires in 1 hour
+    .sign(encodedKey);
 }
 
 /**
@@ -41,18 +46,15 @@ export function getTokenFromRequest(request: NextRequest): string | null {
     return null;
   }
 
-  // Support both "Bearer token" and "token" formats
-  const token = authHeader.startsWith("Bearer ")
+  return authHeader.startsWith("Bearer ")
     ? authHeader.substring(7)
     : authHeader;
-
-  return token;
 }
 
 /**
  * Verify request authentication and return user payload
  */
-export function authenticateRequest(request: NextRequest): JWTPayload | null {
+export async function authenticateRequest(request: NextRequest): Promise<JWTPayload | null> {
   const token = getTokenFromRequest(request);
   
   if (!token) {
@@ -62,29 +64,14 @@ export function authenticateRequest(request: NextRequest): JWTPayload | null {
   return verifyToken(token);
 }
 
-/**
- * Check if user has admin role
- */
 export function isAdmin(user: JWTPayload): boolean {
   return user.role === "ADMIN";
 }
 
-/**
- * Create unauthorized response
- */
 export function unauthorizedResponse(message = "Unauthorized") {
-  return Response.json(
-    { error: message },
-    { status: 401 }
-  );
+  return Response.json({ error: message }, { status: 401 });
 }
 
-/**
- * Create forbidden response
- */
 export function forbiddenResponse(message = "Forbidden") {
-  return Response.json(
-    { error: message },
-    { status: 403 }
-  );
+  return Response.json({ error: message }, { status: 403 });
 }

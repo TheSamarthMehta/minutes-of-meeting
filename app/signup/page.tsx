@@ -104,8 +104,8 @@ export default function SignUpPage() {
 
       showToast("Account created successfully!", "success");
       
-      // Redirect to home page
-      router.push("/");
+      // Redirect to dashboard page
+      router.push("/dashboard");
     } catch (error) {
       console.error("Signup error:", error);
       showToast("An error occurred. Please try again.", "error");

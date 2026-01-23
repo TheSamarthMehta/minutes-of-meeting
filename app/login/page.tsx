@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Input } from "@/app/components/ui/input";
-import { Button } from "@/app/components/ui/button";
 import { useToast } from "@/app/components/ui/toast";
 import { useAuthStore } from "@/lib/store/authStore";
 import { loginSchema } from "@/lib/validations/auth";
@@ -28,7 +26,6 @@ export default function LoginPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // Clear error for this field
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
@@ -38,7 +35,6 @@ export default function LoginPage() {
     e.preventDefault();
     setErrors({});
 
-    // Validate with Zod
     try {
       loginSchema.parse(formData);
     } catch (error) {
@@ -68,7 +64,6 @@ export default function LoginPage() {
 
       if (!response.ok) {
         if (data.details) {
-          // Handle validation errors from server
           const fieldErrors: Record<string, string> = {};
           data.details.forEach((detail: any) => {
             fieldErrors[detail.field] = detail.message;
@@ -80,13 +75,12 @@ export default function LoginPage() {
         return;
       }
 
-      // Store user and token in Zustand
       login(data.user, data.token);
+      document.cookie = `token=${data.token}; path=/; max-age=3600; SameSite=Lax`; // 1 hour
+      showToast("Logged in successfully! Session expires in 1 hour.", "success");
 
-      showToast("Logged in successfully!", "success");
-
-      // Redirect to home page
-      router.push("/");
+      router.push("/dashboard");
+      router.refresh();
     } catch (error) {
       console.error("Login error:", error);
       showToast("An error occurred. Please try again.", "error");
@@ -102,12 +96,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex">
-      {/* Left Side - Application Overview */}
       <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Animated Background Gradient */}
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5"></div>
         
-        {/* Logo */}
         <div className="relative z-10 flex items-center gap-2">
           <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-indigo-600 rounded flex items-center justify-center">
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -117,7 +108,6 @@ export default function LoginPage() {
           <span className="text-white text-lg font-semibold">MinutesMaster</span>
         </div>
 
-        {/* Main Content */}
         <div className="relative z-10 space-y-8">
           <div>
             <h1 className="text-4xl font-bold text-white mb-4">
@@ -169,7 +159,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Footer Links */}
         <div className="relative z-10 flex items-center gap-6 text-sm text-gray-500">
           <Link href="#" className="hover:text-gray-300 transition-colors">Terms</Link>
           <Link href="#" className="hover:text-gray-300 transition-colors">Privacy</Link>
@@ -178,11 +167,9 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Side - Form */}
       <div className="w-full lg:w-7/12 flex items-center justify-center p-6 bg-[#1a1a1a]">
         <div className="w-full max-w-md">
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
-            {/* Social Login */}
             <div>
               <p className="text-gray-400 text-sm mb-3">Sign in with:</p>
               <div className="grid grid-cols-3 gap-3">
@@ -224,7 +211,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-700"></div>
@@ -234,7 +220,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email Field */}
             <div>
               <label className="block text-gray-400 text-sm mb-2">Email</label>
               <div className="relative">

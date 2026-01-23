@@ -11,32 +11,60 @@ interface AuthProviderProps {
 const publicRoutes = ["/login", "/signup"];
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, checkTokenExpiry, logout, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const isPublicRoute = publicRoutes.some((route) =>
-        pathname.startsWith(route)
-      );
+    // Wait for store to rehydrate from localStorage
+    if (!_hasHydrated) {
+      return;
+    }
 
-      // If not authenticated and not on a public route, redirect to login
-      if (!isAuthenticated && !isPublicRoute) {
+    const isPublicRoute = publicRoutes.some((route) =>
+      pathname.startsWith(route)
+    );
+
+    // Check if token has expired
+    const hasExpired = checkTokenExpiry();
+    if (hasExpired && !isPublicRoute) {
+      router.push("/login");
+      setIsChecking(false);
+      return;
+    }
+
+    // If not authenticated and not on a public route, redirect to login
+    if (!isAuthenticated && !isPublicRoute) {
+      router.push("/login");
+      setIsChecking(false);
+      return;
+    }
+
+    // If authenticated and on login/signup page, redirect to dashboard
+    if (isAuthenticated && isPublicRoute) {
+      router.push("/dashboard");
+      setIsChecking(false);
+      return;
+    }
+
+    // Done checking, allow rendering
+    setIsChecking(false);
+  }, [isAuthenticated, pathname, router, checkTokenExpiry, _hasHydrated]);
+
+  // Set up interval to check token expiry every minute
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      const hasExpired = checkTokenExpiry();
+      if (hasExpired) {
         router.push("/login");
       }
+    }, 60000); // Check every minute
 
-      // If authenticated and on login/signup page, redirect to home
-      if (isAuthenticated && isPublicRoute) {
-        router.push("/");
-      }
-
-      setIsChecking(false);
-    };
-
-    checkAuth();
-  }, [isAuthenticated, pathname, router, token]);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, checkTokenExpiry, router]);
 
   // Show nothing while checking auth to prevent flash of wrong content
   if (isChecking) {

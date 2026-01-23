@@ -19,10 +19,49 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(STAFF)
+  meetings Meeting[]
   createdAt DateTime @default(now())
+}
+
+model Meeting {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  date        DateTime
+  status      MeetingStatus @default(UPCOMING)
+  attendees   String[]
+  content     String?       // For the MOM text
+  
+  userId      String        @db.ObjectId
+  user        User          @relation(fields: [userId], references: [id])
+  
+  actionItems ActionItem[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ActionItem {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  task      String
+  status    ActionStatus @default(PENDING)
+  dueDate   DateTime?
+  
+  meetingId String       @db.ObjectId
+  meeting   Meeting      @relation(fields: [meetingId], references: [id])
 }
 
 enum Role {
   STAFF
   ADMIN
+}
+
+enum MeetingStatus {
+  UPCOMING
+  COMPLETED
+  CANCELLED
+}
+
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
 }
