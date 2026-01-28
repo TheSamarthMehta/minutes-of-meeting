@@ -23,20 +23,116 @@ model User {
   createdAt DateTime @default(now())
 }
 
+model MeetingType {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  meetingTypeName String    @unique
+  remarks         String?
+  created         DateTime  @default(now())
+  modified        DateTime  @updatedAt
+  meetings        Meeting[]
+}
+
+model Staff {
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  staffName      String
+  mobileNo       String?
+  emailAddress   String          @unique
+  departmentId   String?         @db.ObjectId
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  remarks        String?
+  created        DateTime        @default(now())
+  modified       DateTime        @updatedAt
+  meetingMembers MeetingMember[]
+}
+
+model Department {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  code        String?   @unique
+  remarks     String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  staff       Staff[]
+  meetings    Meeting[]
+}
+
+model Venue {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  name        String    @unique
+  location    String?
+  capacity    Int?
+  remarks     String?
+  created     DateTime  @default(now())
+  modified    DateTime  @updatedAt
+  meetings    Meeting[]
+}
+
 model Meeting {
-  id          String        @id @default(auto()) @map("_id") @db.ObjectId
-  title       String
-  date        DateTime
-  status      MeetingStatus @default(UPCOMING)
-  attendees   String[]
-  content     String?       // For the MOM text
+  id                  String          @id @default(auto()) @map("_id") @db.ObjectId
+  title               String
+  date                DateTime
+  time                String?         // Meeting time
+  status              MeetingStatus   @default(UPCOMING)
+  agenda              String?         // Meeting agenda
+  description         String?         // Detailed description
+  content             String?         // For the MOM text/minutes
   
-  userId      String        @db.ObjectId
-  user        User          @relation(fields: [userId], references: [id])
+  // Cancellation details
+  isCancelled         Boolean         @default(false)
+  cancellationDate    DateTime?
+  cancellationTime    String?
+  cancellationReason  String?
   
-  actionItems ActionItem[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  meetingTypeId       String?         @db.ObjectId
+  meetingType         MeetingType?    @relation(fields: [meetingTypeId], references: [id])
+  
+  departmentId        String?         @db.ObjectId
+  department          Department?     @relation(fields: [departmentId], references: [id])
+  
+  venueId             String?         @db.ObjectId
+  venue               Venue?          @relation(fields: [venueId], references: [id])
+  
+  userId              String          @db.ObjectId
+  user                User            @relation(fields: [userId], references: [id])
+  
+  members             MeetingMember[]
+  documents           Document[]
+  actionItems         ActionItem[]
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+}
+
+model MeetingMember {
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  meetingId       String            @db.ObjectId
+  meeting         Meeting           @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  staffId         String            @db.ObjectId
+  staff           Staff             @relation(fields: [staffId], references: [id])
+  
+  attendanceStatus AttendanceStatus @default(PENDING)
+  attendanceRemarks String?
+  
+  created         DateTime          @default(now())
+  modified        DateTime          @updatedAt
+  
+  @@unique([meetingId, staffId])
+}
+
+model Document {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  fileName    String
+  fileUrl     String
+  fileType    String?
+  fileSize    Int?     // in bytes
+  description String?
+  
+  meetingId   String   @db.ObjectId
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  
+  uploadedBy  String?
+  created     DateTime @default(now())
+  modified    DateTime @updatedAt
 }
 
 model ActionItem {
@@ -64,4 +160,10 @@ enum ActionStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+}
+
+enum AttendanceStatus {
+  PENDING
+  PRESENT
+  ABSENT
 }
