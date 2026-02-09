@@ -27,8 +27,10 @@ model MeetingType {
   id              String    @id @default(auto()) @map("_id") @db.ObjectId
   meetingTypeName String    @unique
   remarks         String?
+  createdBy       String?
+  modifiedBy      String?
   created         DateTime  @default(now())
-  modified        DateTime  @updatedAt
+  modified        DateTime?
   meetings        Meeting[]
 }
 
@@ -50,8 +52,10 @@ model Department {
   name        String    @unique
   code        String?   @unique
   remarks     String?
+  createdBy   String?
+  modifiedBy  String?
   created     DateTime  @default(now())
-  modified    DateTime  @updatedAt
+  modified    DateTime?
   staff       Staff[]
   meetings    Meeting[]
 }

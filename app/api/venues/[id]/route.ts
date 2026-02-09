@@ -3,14 +3,15 @@ import { prisma } from '@/lib/db';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { name, location, capacity, remarks } = body;
 
     const venue = await prisma.venue.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         location,
@@ -46,11 +47,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.venue.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Venue deleted successfully' });

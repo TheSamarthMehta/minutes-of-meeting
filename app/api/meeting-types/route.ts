@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserFromHeaders } from '@/lib/auth';
 
 export async function GET() {
   try {
     const meetingTypes = await prisma.meetingType.findMany({
+      include: {
+        _count: {
+          select: { meetings: true },
+        },
+      },
       orderBy: { created: 'desc' },
     });
     return NextResponse.json(meetingTypes);
@@ -18,6 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = getUserFromHeaders(request);
     const body = await request.json();
     const { meetingTypeName, remarks } = body;
 
@@ -28,10 +35,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user name from database
+    let userName = 'Unknown';
+    if (user) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { name: true }
+      });
+      userName = userRecord?.name || user.email;
+    }
+
     const meetingType = await prisma.meetingType.create({
       data: {
         meetingTypeName,
         remarks,
+        createdBy: userName,
       },
     });
 

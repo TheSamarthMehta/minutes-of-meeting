@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserFromHeaders } from '@/lib/auth';
 
 export async function GET() {
   try {
@@ -23,6 +24,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = getUserFromHeaders(request);
     const body = await request.json();
     const { name, code, remarks } = body;
 
@@ -33,11 +35,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get user name from database
+    let userName = 'Unknown';
+    if (user) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { name: true }
+      });
+      userName = userRecord?.name || user.email;
+    }
+
     const department = await prisma.department.create({
       data: {
         name,
         code,
         remarks,
+        createdBy: userName,
+        // Don't set modifiedBy on creation - it should only be set when actually modified
       },
     });
 

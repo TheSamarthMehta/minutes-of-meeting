@@ -1,20 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserFromHeaders } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    const user = getUserFromHeaders(request);
     const body = await request.json();
     const { name, code, remarks } = body;
 
+    // Get user name from database
+    let userName = 'Unknown';
+    if (user) {
+      const userRecord = await prisma.user.findUnique({
+        where: { id: user.userId },
+        select: { name: true }
+      });
+      userName = userRecord?.name || user.email;
+    }
+
     const department = await prisma.department.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         code,
         remarks,
+        modifiedBy: userName,
+        modified: new Date(),
       },
     });
 
@@ -45,11 +60,12 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.department.delete({
-      where: { id: params.id },
+      where: { id },
     });
 
     return NextResponse.json({ message: 'Department deleted successfully' });

@@ -8,7 +8,7 @@ const publicRoutes = ["/login", "/signup"];
 // Define API routes that don't require authentication
 const publicApiRoutes = ["/api/auth/login", "/api/auth/signup"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
@@ -38,7 +38,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Verify token
-  const payload = verifyToken(token);
+  const payload = await verifyToken(token);
 
   if (!payload) {
     if (pathname.startsWith("/api/")) {

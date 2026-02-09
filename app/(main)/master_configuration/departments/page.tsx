@@ -13,14 +13,17 @@ import {
   AlertCircle,
   Eye,
 } from "lucide-react";
+import EntityCard from "@/app/components/EntityCard";
 
 interface Department {
   id: string;
   name: string;
   code?: string;
   remarks?: string;
+  createdBy?: string;
+  modifiedBy?: string;
   created: string;
-  modified: string;
+  modified?: string;
   _count?: {
     staff: number;
     meetings: number;
@@ -39,8 +42,10 @@ export default function DepartmentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [viewingDept, setViewingDept] = useState<Department | null>(null);
+  const [deletingDept, setDeletingDept] = useState<Department | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: "",
     code: "",
@@ -181,17 +186,21 @@ export default function DepartmentsPage() {
     }
   };
 
-  const handleDelete = async (dept: Department) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${dept.name}"? This action cannot be undone.`,
-      )
-    ) {
-      return;
-    }
+  const openDeleteModal = (dept: Department) => {
+    setDeletingDept(dept);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingDept(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deletingDept) return;
 
     try {
-      const response = await fetch(`/api/departments/${dept.id}`, {
+      const response = await fetch(`/api/departments/${deletingDept.id}`, {
         method: "DELETE",
       });
 
@@ -202,8 +211,10 @@ export default function DepartmentsPage() {
 
       showToast("Department deleted successfully", "success");
       fetchDepartments();
+      closeDeleteModal();
     } catch (error: any) {
       showToast(error.message, "error");
+      closeDeleteModal();
     }
   };
 
@@ -297,73 +308,27 @@ export default function DepartmentsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDepartments.map((dept) => (
-            <div
+            <EntityCard
               key={dept.id}
-              className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-xl p-6 hover:border-emerald-600/30 transition-all group"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">
-                      {dept.name}
-                    </h3>
-                    {dept.code && (
-                      <p className="text-xs text-emerald-400 mt-0.5 font-mono">
-                        {dept.code}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => openViewModal(dept)}
-                    className="p-2 text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    title="View department details"
-                  >
-                    <Eye size={16} />
-                  </button>
-                  <button
-                    onClick={() => openModal(dept)}
-                    className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    title="Edit department"
-                  >
-                    <Edit2 size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(dept)}
-                    className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    title="Delete department"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {dept.remarks && (
-                <p className="text-gray-400 text-sm mb-4 line-clamp-2">
-                  {dept.remarks}
-                </p>
-              )}
-
-              <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm">
-                    <Users size={14} />
-                    <span>{dept._count?.staff || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-gray-400 text-sm">
-                    <Calendar size={14} />
-                    <span>{dept._count?.meetings || 0}</span>
-                  </div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  {new Date(dept.created).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
+              icon={Building2}
+              iconClassName="bg-gradient-to-br from-emerald-500 to-teal-500"
+              hoverBorderClassName="hover:border-emerald-600/30"
+              title={dept.name}
+              subtitle={dept.code}
+              description={dept.remarks}
+              stats={[
+                { icon: Users, value: dept._count?.staff || 0, label: "staff" },
+                {
+                  icon: Calendar,
+                  value: dept._count?.meetings || 0,
+                  label: "meetings",
+                },
+              ]}
+              date={dept.created}
+              onView={() => openViewModal(dept)}
+              onEdit={() => openModal(dept)}
+              onDelete={() => openDeleteModal(dept)}
+            />
           ))}
         </div>
       )}
@@ -599,6 +564,27 @@ export default function DepartmentsPage() {
                 )}
               </div>
 
+              {/* User Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    Created By
+                  </label>
+                  <p className="text-base text-white font-medium">
+                    {viewingDept.createdBy || "Unknown"}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                    Modified By
+                  </label>
+                  <p className="text-base text-white font-medium">
+                    {viewingDept.modifiedBy || "-"}
+                  </p>
+                </div>
+              </div>
+
               {/* Remarks */}
               {viewingDept.remarks && (
                 <div className="space-y-2">
@@ -644,6 +630,13 @@ export default function DepartmentsPage() {
                       year: "numeric",
                     })}
                   </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    {new Date(viewingDept.created).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
                 </div>
 
                 <div className="bg-[#0f0f0f] rounded-xl p-4 border border-gray-800">
@@ -651,27 +644,110 @@ export default function DepartmentsPage() {
                     <span className="text-sm font-medium">Modified</span>
                   </div>
                   <p className="text-sm font-semibold text-white">
-                    {new Date(viewingDept.modified).toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      },
-                    )}
+                    {viewingDept.modified
+                      ? new Date(viewingDept.modified).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          },
+                        )
+                      : "-"}
+                  </p>
+                  {viewingDept.modified && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      {new Date(viewingDept.modified).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingDept && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeDeleteModal();
+          }}
+        >
+          <div className="bg-gradient-to-br from-[#1f1f1f] via-[#1a1a1a] to-[#151515] border border-red-900/50 rounded-2xl w-full max-w-md shadow-2xl shadow-red-500/10 animate-in zoom-in-95 slide-in-from-bottom-4 duration-300">
+            {/* Modal Header */}
+            <div className="relative p-6 pb-4 border-b border-red-900/30">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-xl font-bold text-white mb-1">
+                    Delete Department
+                  </h2>
+                  <p className="text-sm text-gray-400">
+                    This action cannot be undone
                   </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex pt-4 border-t border-gray-800">
-                <button
-                  onClick={closeViewModal}
-                  className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-emerald-600/30"
-                >
-                  Close
-                </button>
+              <button
+                onClick={closeDeleteModal}
+                className="absolute top-6 right-6 text-gray-400 hover:text-white hover:bg-gray-800 p-2 rounded-lg transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="bg-red-950/30 border border-red-900/50 rounded-lg p-4">
+                <p className="text-gray-300 text-sm">
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-white">
+                    "{deletingDept.name}"
+                  </span>
+                  {deletingDept.code && (
+                    <span className="text-red-400 font-mono">
+                      {" "}
+                      ({deletingDept.code})
+                    </span>
+                  )}
+                  ?
+                </p>
+                {(deletingDept._count?.staff || 0) > 0 && (
+                  <p className="text-yellow-400 text-sm mt-2 flex items-center gap-2">
+                    <AlertCircle size={16} />
+                    This department has {deletingDept._count?.staff} staff
+                    member(s)
+                  </p>
+                )}
               </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 pt-0 flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} />
+                Delete
+              </button>
             </div>
           </div>
         </div>
