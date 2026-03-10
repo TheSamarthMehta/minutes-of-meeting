@@ -64,17 +64,35 @@ export default function MainLayout({
         } hidden md:flex`}
       >
         <div
-          className={`p-6 flex items-center gap-2 transition-all duration-300 ${
+          className={`p-6 flex items-center gap-3 transition-all duration-300 ${
             isSidebarOpen ? "justify-start" : "justify-center"
           }`}
         >
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded flex items-center justify-center flex-shrink-0">
-            <FileText className="w-5 h-5 text-white" />
+          <div className="relative w-9 h-9 bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/20">
+            <svg
+              className="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+              />
+            </svg>
+            <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border border-[#0a0a0a]"></div>
           </div>
           {isSidebarOpen && (
-            <span className="text-lg font-bold tracking-tight whitespace-nowrap">
-              MinutesMaster
-            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-base font-bold tracking-tight whitespace-nowrap">
+                MinutesMaster
+              </span>
+              <span className="text-[10px] text-gray-400 font-medium">
+                Meeting Docs
+              </span>
+            </div>
           )}
         </div>
 

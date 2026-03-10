@@ -13,6 +13,8 @@ import {
   Calendar,
 } from "lucide-react";
 import EntityCard from "@/app/components/EntityCard";
+import { useToast } from "@/lib/hooks/useToast";
+import { formatDate, formatTime } from "@/lib/utils/dateFormatter";
 
 interface MeetingType {
   id: string;
@@ -22,6 +24,7 @@ interface MeetingType {
   modifiedBy?: string;
   created: string;
   modified?: string;
+  creationOrder?: number; // Added to track original creation order
   _count?: {
     meetings: number;
   };
@@ -48,10 +51,7 @@ export default function MeetingTypesPage() {
   });
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error";
-  } | null>(null);
+  const { toast, showToast } = useToast();
 
   useEffect(() => {
     fetchMeetingTypes();
@@ -62,7 +62,12 @@ export default function MeetingTypesPage() {
       const response = await fetch("/api/meeting-types");
       if (response.ok) {
         const data = await response.json();
-        setMeetingTypes(data);
+        // Sort by creation date (oldest first) to maintain creation order
+        const sortedData = data.sort(
+          (a: MeetingType, b: MeetingType) =>
+            new Date(a.created).getTime() - new Date(b.created).getTime(),
+        );
+        setMeetingTypes(sortedData);
       }
     } catch (error) {
       console.error("Error fetching meeting types:", error);
@@ -70,11 +75,6 @@ export default function MeetingTypesPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const validateForm = () => {
@@ -187,9 +187,12 @@ export default function MeetingTypesPage() {
     }
   };
 
-  const filteredTypes = meetingTypes.filter((type) =>
-    type.meetingTypeName.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Filter meeting types while maintaining original creation order number
+  const filteredTypes = meetingTypes
+    .map((type, index) => ({ ...type, creationOrder: index + 1 }))
+    .filter((type) =>
+      type.meetingTypeName.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -271,7 +274,7 @@ export default function MeetingTypesPage() {
           {filteredTypes.map((type) => (
             <EntityCard
               key={type.id}
-              icon={ListChecks}
+              displayNumber={type.creationOrder}
               iconClassName="bg-gradient-to-br from-blue-500 to-indigo-500"
               hoverBorderClassName="hover:border-blue-600/30"
               title={type.meetingTypeName}
@@ -335,12 +338,18 @@ export default function MeetingTypesPage() {
                   <input
                     type="text"
                     value={formData.meetingTypeName}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Capitalize first letter automatically
+                      const formattedValue =
+                        value.length === 1
+                          ? value.toUpperCase()
+                          : value.charAt(0).toUpperCase() + value.slice(1);
                       setFormData({
                         ...formData,
-                        meetingTypeName: e.target.value,
-                      })
-                    }
+                        meetingTypeName: formattedValue,
+                      });
+                    }}
                     className={`w-full bg-[#0f0f0f] border ${
                       formErrors.meetingTypeName
                         ? "border-red-500"
@@ -463,7 +472,7 @@ export default function MeetingTypesPage() {
                     Created By
                   </label>
                   <p className="text-base text-white font-medium">
-                    {viewingType.createdBy || "Unknown"}
+                    {viewingType.createdBy || "System"}
                   </p>
                 </div>
 
@@ -506,18 +515,10 @@ export default function MeetingTypesPage() {
                     <span className="text-sm font-medium">Created</span>
                   </div>
                   <p className="text-sm font-semibold text-white">
-                    {new Date(viewingType.created).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatDate(viewingType.created)}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(viewingType.created).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {formatTime(viewingType.created)}
                   </p>
                 </div>
 
@@ -527,26 +528,12 @@ export default function MeetingTypesPage() {
                   </div>
                   <p className="text-sm font-semibold text-white">
                     {viewingType.modified
-                      ? new Date(viewingType.modified).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          },
-                        )
+                      ? formatDate(viewingType.modified)
                       : "-"}
                   </p>
                   {viewingType.modified && (
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(viewingType.modified).toLocaleTimeString(
-                        "en-US",
-                        {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        },
-                      )}
+                      {formatTime(viewingType.modified)}
                     </p>
                   )}
                 </div>

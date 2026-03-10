@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
-import { getUserFromHeaders } from '@/lib/auth';
+import { getUserDisplayName } from '@/lib/utils/apiHelpers';
 
 export async function PUT(
   request: NextRequest,
@@ -8,19 +8,10 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const user = getUserFromHeaders(request);
     const body = await request.json();
     const { meetingTypeName, remarks } = body;
 
-    // Get user name from database
-    let userName = 'Unknown';
-    if (user) {
-      const userRecord = await prisma.user.findUnique({
-        where: { id: user.userId },
-        select: { name: true }
-      });
-      userName = userRecord?.name || user.email;
-    }
+    const userName = await getUserDisplayName(request);
 
     const meetingType = await prisma.meetingType.update({
       where: { id },

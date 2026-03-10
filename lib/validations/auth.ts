@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isCommonPassword } from "@/lib/utils/passwordSecurity";
 
 // Signup validation schema
 export const signupSchema = z.object({
@@ -17,7 +18,11 @@ export const signupSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character")
+    .refine(
+      (password) => !isCommonPassword(password),
+      "This password is too common and easily guessable. Please choose a more unique password"
+    ),
   role: z.enum(["STAFF", "ADMIN"]).optional().default("STAFF"),
 });
 

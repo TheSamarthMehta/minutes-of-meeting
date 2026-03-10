@@ -8,7 +8,12 @@ import { Button } from "@/app/components/ui/button";
 import { useToast } from "@/app/components/ui/toast";
 import { useAuthStore } from "@/lib/store/authStore";
 import { signupSchema } from "@/lib/validations/auth";
+import { SearchableDropdown } from "@/app/components/SearchableDropdown";
 import { z } from "zod";
+import {
+  calculatePasswordStrength,
+  getPasswordStrengthInfo,
+} from "@/lib/utils/passwordSecurity";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -21,26 +26,29 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [passwordStrength, setPasswordStrength] = useState<{
+    score: number;
+    feedback: string[];
+  }>({ score: 0, feedback: [] });
   const { showToast } = useToast();
   const { login } = useAuthStore();
   const router = useRouter();
-
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (password.length >= 12) strength++;
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^a-zA-Z0-9]/.test(password)) strength++;
-    return Math.min(strength, 4);
-  };
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Apply automatic capitalization for name field
+    let transformedValue = value;
+    if (name === "name") {
+      transformedValue =
+        value.length === 1
+          ? value.toUpperCase()
+          : value.charAt(0).toUpperCase() + value.slice(1);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: transformedValue }));
 
     // Clear error for this field
     if (errors[name]) {
@@ -158,25 +166,32 @@ export default function SignUpPage() {
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5"></div>
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-indigo-600 rounded flex items-center justify-center">
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="relative w-10 h-10 bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/25">
             <svg
-              className="w-5 h-5 text-white"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
+              {/* Clipboard with checkmark - professional meeting minutes icon */}
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
               />
             </svg>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0a]"></div>
           </div>
-          <span className="text-white text-lg font-semibold">
-            MinutesMaster
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-white text-xl font-bold tracking-tight">
+              MinutesMaster
+            </span>
+            <span className="text-xs text-gray-400 font-medium">
+              Meeting Documentation
+            </span>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -259,6 +274,7 @@ export default function SignUpPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="John Doe"
+                  autoComplete="name"
                   className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -292,6 +308,7 @@ export default function SignUpPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="john@example.com"
+                  autoComplete="email"
                   className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -327,6 +344,7 @@ export default function SignUpPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
+                  autoComplete="new-password"
                   className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 pl-10 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
                 <button
@@ -371,27 +389,76 @@ export default function SignUpPage() {
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Minimum length is 8 characters
-              </p>
+
+              {/* Password Strength Indicator */}
+              {formData.password && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-gray-400">
+                      Password Strength:
+                    </span>
+                    <span
+                      className={`text-xs font-medium ${
+                        getPasswordStrengthInfo(passwordStrength.score)
+                          .textColor
+                      }`}
+                    >
+                      {getPasswordStrengthInfo(passwordStrength.score).label}
+                    </span>
+                  </div>
+                  <div className="flex gap-1 mb-2">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
+                          level <= passwordStrength.score
+                            ? getPasswordStrengthInfo(passwordStrength.score)
+                                .color
+                            : "bg-gray-700"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {passwordStrength.feedback.length > 0 && (
+                    <div className="space-y-1">
+                      {passwordStrength.feedback.map((tip, index) => (
+                        <p
+                          key={index}
+                          className="text-xs text-gray-400 flex items-start gap-1.5"
+                        >
+                          <span className="text-yellow-500 mt-0.5">•</span>
+                          <span>{tip}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!formData.password && (
+                <p className="mt-2 text-xs text-gray-500">
+                  Must be 8+ characters with uppercase, lowercase, number &
+                  special character
+                </p>
+              )}
               {errors.password && (
                 <p className="mt-1 text-xs text-red-500">{errors.password}</p>
               )}
             </div>
 
             {/* Role Field */}
-            <div>
-              <label className="block text-gray-400 text-sm mb-2">Role</label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleInputChange}
-                className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
-              >
-                <option value="STAFF">Staff</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
+            <SearchableDropdown
+              label="Role"
+              value={formData.role}
+              onChange={(value) =>
+                setFormData({ ...formData, role: value as "STAFF" | "ADMIN" })
+              }
+              options={[
+                { value: "STAFF", label: "Staff" },
+                { value: "ADMIN", label: "Admin" },
+              ]}
+              placeholder="Role"
+            />
 
             {/* Submit Button */}
             <button

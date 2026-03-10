@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserDisplayName } from '@/lib/utils/apiHelpers';
 
 export async function PUT(
   request: NextRequest,
@@ -10,6 +11,15 @@ export async function PUT(
     const body = await request.json();
     const { name, location, capacity, remarks } = body;
 
+    if (!name) {
+      return NextResponse.json(
+        { error: 'Venue name is required' },
+        { status: 400 }
+      );
+    }
+
+    const userName = await getUserDisplayName(request);
+
     const venue = await prisma.venue.update({
       where: { id },
       data: {
@@ -17,6 +27,8 @@ export async function PUT(
         location,
         capacity: capacity ? parseInt(capacity) : null,
         remarks,
+        modifiedBy: userName,
+        modified: new Date(),
       },
     });
 
@@ -51,6 +63,27 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    // Check if venue is being used in any meetings
+    const venueWithMeetings = await prisma.venue.findUnique({
+      where: { id },
+      include: { _count: { select: { meetings: true } } },
+    });
+
+    if (!venueWithMeetings) {
+      return NextResponse.json(
+        { error: 'Venue not found' },
+        { status: 404 }
+      );
+    }
+
+    if (venueWithMeetings._count.meetings > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete venue. It is being used in ${venueWithMeetings._count.meetings} meeting(s)` },
+        { status: 400 }
+      );
+    }
+
     await prisma.venue.delete({
       where: { id },
     });

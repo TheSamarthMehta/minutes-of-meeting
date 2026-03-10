@@ -1,34 +1,56 @@
 "use client";
 
-import { useState } from 'react';
-import { ArrowLeft, UserPlus, Search, X } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { ArrowLeft, UserPlus, Search, X } from "lucide-react";
+import Link from "next/link";
+import { SearchableDropdown } from "@/app/components/SearchableDropdown";
 
 export default function AddMembersPage() {
-  const [selectedMeeting, setSelectedMeeting] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMeeting, setSelectedMeeting] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const meetings = [
-    { id: '1', title: 'Board Meeting Q1', date: '2026-01-28' },
-    { id: '2', title: 'Department Review', date: '2026-01-30' },
+    { id: "1", title: "Board Meeting Q1", date: "2026-01-28" },
+    { id: "2", title: "Department Review", date: "2026-01-30" },
   ];
 
   const availableStaff = [
-    { id: '1', name: 'John Doe', department: 'Administration', email: 'john@example.com' },
-    { id: '2', name: 'Jane Smith', department: 'Finance', email: 'jane@example.com' },
-    { id: '3', name: 'Bob Johnson', department: 'IT', email: 'bob@example.com' },
-    { id: '4', name: 'Alice Williams', department: 'HR', email: 'alice@example.com' },
+    {
+      id: "1",
+      name: "John Doe",
+      department: "Administration",
+      email: "john@example.com",
+    },
+    {
+      id: "2",
+      name: "Jane Smith",
+      department: "Finance",
+      email: "jane@example.com",
+    },
+    {
+      id: "3",
+      name: "Bob Johnson",
+      department: "IT",
+      email: "bob@example.com",
+    },
+    {
+      id: "4",
+      name: "Alice Williams",
+      department: "HR",
+      email: "alice@example.com",
+    },
   ];
 
-  const filteredStaff = availableStaff.filter(staff =>
-    staff.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-    !selectedMembers.includes(staff.id)
+  const filteredStaff = availableStaff.filter(
+    (staff) =>
+      staff.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
+      !selectedMembers.includes(staff.id),
   );
 
   const toggleMember = (id: string) => {
-    setSelectedMembers(prev =>
-      prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]
+    setSelectedMembers((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
     );
   };
 
@@ -44,7 +66,9 @@ export default function AddMembersPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-white">Add Meeting Members</h1>
-          <p className="text-gray-400 mt-1">Select participants for the meeting</p>
+          <p className="text-gray-400 mt-1">
+            Select participants for the meeting
+          </p>
         </div>
       </div>
 
@@ -53,25 +77,27 @@ export default function AddMembersPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Select Meeting */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Select Meeting</h2>
-            <select
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Select Meeting
+            </h2>
+            <SearchableDropdown
+              label="Meeting"
               value={selectedMeeting}
-              onChange={(e) => setSelectedMeeting(e.target.value)}
-              className="w-full bg-[#0f0f0f] border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="">Choose a meeting...</option>
-              {meetings.map(meeting => (
-                <option key={meeting.id} value={meeting.id}>
-                  {meeting.title} - {new Date(meeting.date).toLocaleDateString()}
-                </option>
-              ))}
-            </select>
+              onChange={(value) => setSelectedMeeting(value)}
+              options={meetings.map((meeting) => ({
+                value: meeting.id,
+                label: `${meeting.title} - ${new Date(meeting.date).toLocaleDateString()}`,
+              }))}
+              placeholder="Choose a meeting"
+            />
           </div>
 
           {/* Available Staff */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Available Staff</h2>
-            
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Available Staff
+            </h2>
+
             {/* Search */}
             <div className="relative mb-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -86,7 +112,7 @@ export default function AddMembersPage() {
 
             {/* Staff List */}
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {filteredStaff.map(staff => (
+              {filteredStaff.map((staff) => (
                 <div
                   key={staff.id}
                   onClick={() => toggleMember(staff.id)}
@@ -99,7 +125,9 @@ export default function AddMembersPage() {
                       </div>
                       <div>
                         <p className="text-white font-medium">{staff.name}</p>
-                        <p className="text-sm text-gray-400">{staff.department}</p>
+                        <p className="text-sm text-gray-400">
+                          {staff.department}
+                        </p>
                       </div>
                     </div>
                     <button
@@ -123,7 +151,7 @@ export default function AddMembersPage() {
           <h2 className="text-lg font-semibold text-white mb-4">
             Selected Members ({selectedMembers.length})
           </h2>
-          
+
           {selectedMembers.length === 0 ? (
             <div className="text-center py-12">
               <UserPlus className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -131,8 +159,8 @@ export default function AddMembersPage() {
             </div>
           ) : (
             <div className="space-y-3 mb-6">
-              {selectedMembers.map(memberId => {
-                const member = availableStaff.find(s => s.id === memberId);
+              {selectedMembers.map((memberId) => {
+                const member = availableStaff.find((s) => s.id === memberId);
                 if (!member) return null;
                 return (
                   <div
@@ -144,8 +172,12 @@ export default function AddMembersPage() {
                         {member.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="text-sm text-white font-medium">{member.name}</p>
-                        <p className="text-xs text-gray-500">{member.department}</p>
+                        <p className="text-sm text-white font-medium">
+                          {member.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {member.department}
+                        </p>
                       </div>
                     </div>
                     <button
@@ -164,7 +196,8 @@ export default function AddMembersPage() {
             disabled={!selectedMeeting || selectedMembers.length === 0}
             className="w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-lg font-medium"
           >
-            Add {selectedMembers.length} Member{selectedMembers.length !== 1 ? 's' : ''}
+            Add {selectedMembers.length} Member
+            {selectedMembers.length !== 1 ? "s" : ""}
           </button>
         </div>
       </div>

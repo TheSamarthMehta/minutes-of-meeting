@@ -14,6 +14,8 @@ import {
   Eye,
 } from "lucide-react";
 import EntityCard from "@/app/components/EntityCard";
+import { useToast } from "@/lib/hooks/useToast";
+import { formatDate, formatTime } from "@/lib/utils/dateFormatter";
 
 interface Department {
   id: string;
@@ -24,6 +26,7 @@ interface Department {
   modifiedBy?: string;
   created: string;
   modified?: string;
+  creationOrder?: number; // Added to track original creation order
   _count?: {
     staff: number;
     meetings: number;
@@ -53,10 +56,7 @@ export default function DepartmentsPage() {
   });
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error";
-  } | null>(null);
+  const { toast, showToast, dismissToast } = useToast();
 
   useEffect(() => {
     fetchDepartments();
@@ -67,7 +67,12 @@ export default function DepartmentsPage() {
       const response = await fetch("/api/departments");
       if (response.ok) {
         const data = await response.json();
-        setDepartments(data);
+        // Sort by creation date (oldest first) to maintain creation order
+        const sortedData = data.sort(
+          (a: Department, b: Department) =>
+            new Date(a.created).getTime() - new Date(b.created).getTime(),
+        );
+        setDepartments(sortedData);
       }
     } catch (error) {
       console.error("Error fetching departments:", error);
@@ -75,11 +80,6 @@ export default function DepartmentsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const showToast = (message: string, type: "success" | "error") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
   };
 
   const openModal = (dept?: Department) => {
@@ -218,11 +218,14 @@ export default function DepartmentsPage() {
     }
   };
 
-  const filteredDepartments = departments.filter(
-    (dept) =>
-      dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dept.code?.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  // Filter departments while maintaining original creation order number
+  const filteredDepartments = departments
+    .map((dept, index) => ({ ...dept, creationOrder: index + 1 }))
+    .filter(
+      (dept) =>
+        dept.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        dept.code?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -250,7 +253,7 @@ export default function DepartmentsPage() {
           )}
           <span className="font-medium">{toast.message}</span>
           <button
-            onClick={() => setToast(null)}
+            onClick={dismissToast}
             className="ml-2 hover:bg-white/10 p-1 rounded transition-colors"
           >
             <X size={16} />
@@ -310,7 +313,7 @@ export default function DepartmentsPage() {
           {filteredDepartments.map((dept) => (
             <EntityCard
               key={dept.id}
-              icon={Building2}
+              displayNumber={dept.creationOrder}
               iconClassName="bg-gradient-to-br from-emerald-500 to-teal-500"
               hoverBorderClassName="hover:border-emerald-600/30"
               title={dept.name}
@@ -377,9 +380,15 @@ export default function DepartmentsPage() {
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Capitalize first letter automatically
+                      const formattedValue =
+                        value.length === 1
+                          ? value.toUpperCase()
+                          : value.charAt(0).toUpperCase() + value.slice(1);
+                      setFormData({ ...formData, name: formattedValue });
+                    }}
                     className={`w-full bg-[#0f0f0f] border-2 ${
                       formErrors.name
                         ? "border-red-500 focus:border-red-500"
@@ -571,7 +580,7 @@ export default function DepartmentsPage() {
                     Created By
                   </label>
                   <p className="text-base text-white font-medium">
-                    {viewingDept.createdBy || "Unknown"}
+                    {viewingDept.createdBy || "System"}
                   </p>
                 </div>
 
@@ -624,18 +633,10 @@ export default function DepartmentsPage() {
                     <span className="text-sm font-medium">Created</span>
                   </div>
                   <p className="text-sm font-semibold text-white">
-                    {new Date(viewingDept.created).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatDate(viewingDept.created)}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(viewingDept.created).toLocaleTimeString("en-US", {
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {formatTime(viewingDept.created)}
                   </p>
                 </div>
 
@@ -645,26 +646,12 @@ export default function DepartmentsPage() {
                   </div>
                   <p className="text-sm font-semibold text-white">
                     {viewingDept.modified
-                      ? new Date(viewingDept.modified).toLocaleDateString(
-                          "en-US",
-                          {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          },
-                        )
+                      ? formatDate(viewingDept.modified)
                       : "-"}
                   </p>
                   {viewingDept.modified && (
                     <p className="text-xs text-gray-400 mt-1">
-                      {new Date(viewingDept.modified).toLocaleTimeString(
-                        "en-US",
-                        {
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        },
-                      )}
+                      {formatTime(viewingDept.modified)}
                     </p>
                   )}
                 </div>

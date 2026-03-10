@@ -75,16 +75,29 @@ model MeetingType {
 }
 
 model Staff {
-  id             String          @id @default(auto()) @map("_id") @db.ObjectId
-  staffName      String
-  mobileNo       String?
-  emailAddress   String          @unique
-  departmentId   String?         @db.ObjectId
-  department     Department?     @relation(fields: [departmentId], references: [id])
-  remarks        String?
-  created        DateTime        @default(now())
-  modified       DateTime        @updatedAt
-  meetingMembers MeetingMember[]
+  id                     String          @id @default(auto()) @map("_id") @db.ObjectId
+  staffName              String
+  employeeId             String?
+  designation            String?
+  emailAddress           String          @unique
+  mobileNo               String?
+  dateOfBirth            DateTime?
+  gender                 String?
+  nationality            String?
+  motherTongue           String?
+  bloodGroup             String?
+  address                String?
+  emergencyContactName   String?
+  emergencyContactNumber String?
+  dateOfJoining          DateTime?
+  departmentId           String?         @db.ObjectId
+  department             Department?     @relation(fields: [departmentId], references: [id])
+  remarks                String?
+  createdBy              String?
+  modifiedBy             String?
+  created                DateTime        @default(now())
+  modified               DateTime?
+  meetingMembers         MeetingMember[]
 }
 
 model Department {
@@ -106,8 +119,10 @@ model Venue {
   location    String?
   capacity    Int?
   remarks     String?
+  createdBy   String?
+  modifiedBy  String?
   created     DateTime  @default(now())
-  modified    DateTime  @updatedAt
+  modified    DateTime?
   meetings    Meeting[]
 }
 

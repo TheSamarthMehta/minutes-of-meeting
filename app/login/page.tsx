@@ -101,25 +101,32 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 via-indigo-500/5 to-purple-500/5"></div>
 
-        <div className="relative z-10 flex items-center gap-2">
-          <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-indigo-600 rounded flex items-center justify-center">
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="relative w-10 h-10 bg-linear-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/25">
             <svg
-              className="w-5 h-5 text-white"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
+              {/* Clipboard with checkmark - professional meeting minutes icon */}
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
               />
             </svg>
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#0a0a0a]"></div>
           </div>
-          <span className="text-white text-lg font-semibold">
-            MinutesMaster
-          </span>
+          <div className="flex flex-col leading-tight">
+            <span className="text-white text-xl font-bold tracking-tight">
+              MinutesMaster
+            </span>
+            <span className="text-xs text-gray-400 font-medium">
+              Meeting Documentation
+            </span>
+          </div>
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -225,6 +232,7 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="john@example.com"
+                  autoComplete="email"
                   className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 pl-10 pr-4 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -260,6 +268,7 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
+                  autoComplete="current-password"
                   className="w-full bg-[#2a2a2a] border border-gray-700 rounded-lg py-3 pl-10 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
                 />
                 <button

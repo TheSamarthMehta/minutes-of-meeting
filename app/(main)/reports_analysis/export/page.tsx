@@ -1,19 +1,36 @@
 "use client";
 
-import { useState } from 'react';
-import { ArrowLeft, Download, FileText, FileSpreadsheet } from 'lucide-react';
-import Link from 'next/link';
+import { useState } from "react";
+import { ArrowLeft, Download, FileText, FileSpreadsheet } from "lucide-react";
+import Link from "next/link";
+import { SearchableDropdown } from "@/app/components/SearchableDropdown";
 
 export default function ExportPage() {
-  const [exportType, setExportType] = useState<'pdf' | 'excel'>('pdf');
-  const [selectedReport, setSelectedReport] = useState('');
-  const [dateRange, setDateRange] = useState('month');
+  const [exportType, setExportType] = useState<"pdf" | "excel">("pdf");
+  const [selectedReport, setSelectedReport] = useState("");
+  const [dateRange, setDateRange] = useState("month");
 
   const reportTypes = [
-    { id: 'meeting-summary', name: 'Meeting Summary Report', description: 'All meetings with details' },
-    { id: 'attendance', name: 'Attendance Report', description: 'Participant attendance records' },
-    { id: 'minutes', name: 'Meeting Minutes', description: 'Detailed meeting minutes' },
-    { id: 'analytics', name: 'Analytics Report', description: 'Statistics and trends' },
+    {
+      id: "meeting-summary",
+      name: "Meeting Summary Report",
+      description: "All meetings with details",
+    },
+    {
+      id: "attendance",
+      name: "Attendance Report",
+      description: "Participant attendance records",
+    },
+    {
+      id: "minutes",
+      name: "Meeting Minutes",
+      description: "Detailed meeting minutes",
+    },
+    {
+      id: "analytics",
+      name: "Analytics Report",
+      description: "Statistics and trends",
+    },
   ];
 
   const handleExport = () => {
@@ -33,7 +50,9 @@ export default function ExportPage() {
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-white">Export Reports</h1>
-          <p className="text-gray-400 mt-1">Export meeting data to Excel or PDF</p>
+          <p className="text-gray-400 mt-1">
+            Export meeting data to Excel or PDF
+          </p>
         </div>
       </div>
 
@@ -42,44 +61,62 @@ export default function ExportPage() {
         <div className="space-y-6">
           {/* Format Selection */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Export Format</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Export Format
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               <button
-                onClick={() => setExportType('pdf')}
+                onClick={() => setExportType("pdf")}
                 className={`p-6 rounded-xl border-2 transition-all ${
-                  exportType === 'pdf'
-                    ? 'border-red-500 bg-red-500/10'
-                    : 'border-gray-800 hover:border-gray-700'
+                  exportType === "pdf"
+                    ? "border-red-500 bg-red-500/10"
+                    : "border-gray-800 hover:border-gray-700"
                 }`}
               >
-                <FileText className={`w-8 h-8 mx-auto mb-3 ${
-                  exportType === 'pdf' ? 'text-red-400' : 'text-gray-400'
-                }`} />
-                <p className={`font-medium ${
-                  exportType === 'pdf' ? 'text-white' : 'text-gray-400'
-                }`}>PDF</p>
+                <FileText
+                  className={`w-8 h-8 mx-auto mb-3 ${
+                    exportType === "pdf" ? "text-red-400" : "text-gray-400"
+                  }`}
+                />
+                <p
+                  className={`font-medium ${
+                    exportType === "pdf" ? "text-white" : "text-gray-400"
+                  }`}
+                >
+                  PDF
+                </p>
               </button>
               <button
-                onClick={() => setExportType('excel')}
+                onClick={() => setExportType("excel")}
                 className={`p-6 rounded-xl border-2 transition-all ${
-                  exportType === 'excel'
-                    ? 'border-emerald-500 bg-emerald-500/10'
-                    : 'border-gray-800 hover:border-gray-700'
+                  exportType === "excel"
+                    ? "border-emerald-500 bg-emerald-500/10"
+                    : "border-gray-800 hover:border-gray-700"
                 }`}
               >
-                <FileSpreadsheet className={`w-8 h-8 mx-auto mb-3 ${
-                  exportType === 'excel' ? 'text-emerald-400' : 'text-gray-400'
-                }`} />
-                <p className={`font-medium ${
-                  exportType === 'excel' ? 'text-white' : 'text-gray-400'
-                }`}>Excel</p>
+                <FileSpreadsheet
+                  className={`w-8 h-8 mx-auto mb-3 ${
+                    exportType === "excel"
+                      ? "text-emerald-400"
+                      : "text-gray-400"
+                  }`}
+                />
+                <p
+                  className={`font-medium ${
+                    exportType === "excel" ? "text-white" : "text-gray-400"
+                  }`}
+                >
+                  Excel
+                </p>
               </button>
             </div>
           </div>
 
           {/* Report Type Selection */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Select Report Type</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Select Report Type
+            </h2>
             <div className="space-y-2">
               {reportTypes.map((report) => (
                 <div
@@ -87,8 +124,8 @@ export default function ExportPage() {
                   onClick={() => setSelectedReport(report.id)}
                   className={`p-4 rounded-lg border cursor-pointer transition-all ${
                     selectedReport === report.id
-                      ? 'bg-blue-500/10 border-blue-500/30'
-                      : 'bg-[#0f0f0f] border-gray-800 hover:border-gray-700'
+                      ? "bg-blue-500/10 border-blue-500/30"
+                      : "bg-[#0f0f0f] border-gray-800 hover:border-gray-700"
                   }`}
                 >
                   <h3 className="text-white font-medium mb-1">{report.name}</h3>
@@ -100,18 +137,22 @@ export default function ExportPage() {
 
           {/* Date Range */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Date Range</h2>
-            <select
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Date Range
+            </h2>
+            <SearchableDropdown
+              label="Date Range"
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="w-full bg-[#0f0f0f] border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
-            >
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-              <option value="all">All Time</option>
-            </select>
+              onChange={(value) => setDateRange(value)}
+              options={[
+                { value: "week", label: "This Week" },
+                { value: "month", label: "This Month" },
+                { value: "quarter", label: "This Quarter" },
+                { value: "year", label: "This Year" },
+                { value: "all", label: "All Time" },
+              ]}
+              placeholder="Date Range"
+            />
           </div>
         </div>
 
@@ -119,36 +160,64 @@ export default function ExportPage() {
         <div className="space-y-6">
           {/* Preview */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Export Preview</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Export Preview
+            </h2>
             <div className="space-y-4">
               <PreviewItem label="Format" value={exportType.toUpperCase()} />
-              <PreviewItem 
-                label="Report Type" 
-                value={reportTypes.find(r => r.id === selectedReport)?.name || 'Not selected'} 
+              <PreviewItem
+                label="Report Type"
+                value={
+                  reportTypes.find((r) => r.id === selectedReport)?.name ||
+                  "Not selected"
+                }
               />
-              <PreviewItem label="Date Range" value={dateRange.charAt(0).toUpperCase() + dateRange.slice(1)} />
+              <PreviewItem
+                label="Date Range"
+                value={dateRange.charAt(0).toUpperCase() + dateRange.slice(1)}
+              />
               <PreviewItem label="Estimated Size" value="~2.5 MB" />
             </div>
           </div>
 
           {/* Export Options */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-2xl p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Export Options</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">
+              Export Options
+            </h2>
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800" defaultChecked />
-                <span className="text-gray-300">Include participant details</span>
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800"
+                  defaultChecked
+                />
+                <span className="text-gray-300">
+                  Include participant details
+                </span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800" defaultChecked />
-                <span className="text-gray-300">Include attendance records</span>
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800"
+                  defaultChecked
+                />
+                <span className="text-gray-300">
+                  Include attendance records
+                </span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800"
+                />
                 <span className="text-gray-300">Include meeting minutes</span>
               </label>
               <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800" />
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 rounded bg-[#0f0f0f] border-gray-800"
+                />
                 <span className="text-gray-300">Include attachments</span>
               </label>
             </div>

@@ -1,9 +1,11 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Settings } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Plus, Settings } from "lucide-react";
+import { SearchableDropdown } from "@/app/components/SearchableDropdown";
+import { ActionButtons } from "@/app/components/ActionButtons";
 
-type Tab = 'meeting-types' | 'staff' | 'departments' | 'venues';
+type Tab = "meeting-types" | "staff" | "departments" | "venues";
 
 interface MeetingType {
   id: string;
@@ -47,7 +49,7 @@ interface Venue {
 }
 
 export default function ConfigPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('meeting-types');
+  const [activeTab, setActiveTab] = useState<Tab>("meeting-types");
   const [meetingTypes, setMeetingTypes] = useState<MeetingType[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -64,56 +66,56 @@ export default function ConfigPage() {
     setLoading(true);
     try {
       const endpoints: Record<Tab, string> = {
-        'meeting-types': '/api/meeting-types',
-        'staff': '/api/staff',
-        'departments': '/api/departments',
-        'venues': '/api/venues',
+        "meeting-types": "/api/meeting-types",
+        staff: "/api/staff",
+        departments: "/api/departments",
+        venues: "/api/venues",
       };
 
       const response = await fetch(endpoints[activeTab]);
       const data = await response.json();
 
       switch (activeTab) {
-        case 'meeting-types':
+        case "meeting-types":
           setMeetingTypes(data);
           break;
-        case 'staff':
+        case "staff":
           setStaff(data);
           break;
-        case 'departments':
+        case "departments":
           setDepartments(data);
           break;
-        case 'venues':
+        case "venues":
           setVenues(data);
           break;
       }
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this item?')) return;
+    if (!confirm("Are you sure you want to delete this item?")) return;
 
     const endpoints: Record<Tab, string> = {
-      'meeting-types': '/api/meeting-types',
-      'staff': '/api/staff',
-      'departments': '/api/departments',
-      'venues': '/api/venues',
+      "meeting-types": "/api/meeting-types",
+      staff: "/api/staff",
+      departments: "/api/departments",
+      venues: "/api/venues",
     };
 
     try {
       const response = await fetch(`${endpoints[activeTab]}/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       if (response.ok) {
         loadData();
       }
     } catch (error) {
-      console.error('Error deleting:', error);
+      console.error("Error deleting:", error);
     }
   };
 
@@ -135,7 +137,9 @@ export default function ConfigPage() {
           <Settings className="text-purple-400" size={24} />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-white">Master Configuration</h1>
+          <h1 className="text-3xl font-bold text-white">
+            Master Configuration
+          </h1>
           <p className="text-gray-400 mt-1">Manage system master data</p>
         </div>
       </div>
@@ -143,18 +147,18 @@ export default function ConfigPage() {
       {/* Tabs */}
       <div className="flex gap-2 border-b border-gray-700/50">
         {[
-          { key: 'meeting-types', label: 'Meeting Types' },
-          { key: 'staff', label: 'Staff' },
-          { key: 'departments', label: 'Departments' },
-          { key: 'venues', label: 'Venues' },
+          { key: "meeting-types", label: "Meeting Types" },
+          { key: "staff", label: "Staff" },
+          { key: "departments", label: "Departments" },
+          { key: "venues", label: "Venues" },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key as Tab)}
             className={`px-6 py-3 font-medium transition-all relative ${
               activeTab === tab.key
-                ? 'text-blue-400'
-                : 'text-gray-400 hover:text-gray-200'
+                ? "text-blue-400"
+                : "text-gray-400 hover:text-gray-200"
             }`}
           >
             {tab.label}
@@ -169,10 +173,10 @@ export default function ConfigPage() {
       <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-white">
-            {activeTab === 'meeting-types' && 'Meeting Types'}
-            {activeTab === 'staff' && 'Staff Members'}
-            {activeTab === 'departments' && 'Departments'}
-            {activeTab === 'venues' && 'Venues'}
+            {activeTab === "meeting-types" && "Meeting Types"}
+            {activeTab === "staff" && "Staff Members"}
+            {activeTab === "departments" && "Departments"}
+            {activeTab === "venues" && "Venues"}
           </h2>
           <button
             onClick={() => openModal()}
@@ -187,28 +191,28 @@ export default function ConfigPage() {
           <div className="text-center py-12 text-gray-400">Loading...</div>
         ) : (
           <>
-            {activeTab === 'meeting-types' && (
+            {activeTab === "meeting-types" && (
               <MeetingTypesTable
                 data={meetingTypes}
                 onEdit={openModal}
                 onDelete={handleDelete}
               />
             )}
-            {activeTab === 'staff' && (
+            {activeTab === "staff" && (
               <StaffTable
                 data={staff}
                 onEdit={openModal}
                 onDelete={handleDelete}
               />
             )}
-            {activeTab === 'departments' && (
+            {activeTab === "departments" && (
               <DepartmentsTable
                 data={departments}
                 onEdit={openModal}
                 onDelete={handleDelete}
               />
             )}
-            {activeTab === 'venues' && (
+            {activeTab === "venues" && (
               <VenuesTable
                 data={venues}
                 onEdit={openModal}
@@ -251,17 +255,30 @@ function MeetingTypesTable({
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Meeting Type</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Remarks</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Created</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">Actions</th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Meeting Type
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Remarks
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Created
+            </th>
+            <th className="text-right py-3 px-4 text-gray-400 font-medium">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-              <td className="py-3 px-4 text-white font-medium">{item.meetingTypeName}</td>
-              <td className="py-3 px-4 text-gray-400">{item.remarks || '-'}</td>
+            <tr
+              key={item.id}
+              className="border-b border-gray-700/30 hover:bg-gray-700/20"
+            >
+              <td className="py-3 px-4 text-white font-medium">
+                {item.meetingTypeName}
+              </td>
+              <td className="py-3 px-4 text-gray-400">{item.remarks || "-"}</td>
               <td className="py-3 px-4 text-gray-400">
                 {new Date(item.created).toLocaleDateString()}
               </td>
@@ -286,7 +303,9 @@ function MeetingTypesTable({
         </tbody>
       </table>
       {data.length === 0 && (
-        <div className="text-center py-12 text-gray-400">No meeting types found</div>
+        <div className="text-center py-12 text-gray-400">
+          No meeting types found
+        </div>
       )}
     </div>
   );
@@ -307,20 +326,39 @@ function StaffTable({
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Email</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Mobile</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Department</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">Actions</th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Name
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Email
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Mobile
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Department
+            </th>
+            <th className="text-right py-3 px-4 text-gray-400 font-medium">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
-              <td className="py-3 px-4 text-white font-medium">{item.staffName}</td>
+            <tr
+              key={item.id}
+              className="border-b border-gray-700/30 hover:bg-gray-700/20"
+            >
+              <td className="py-3 px-4 text-white font-medium">
+                {item.staffName}
+              </td>
               <td className="py-3 px-4 text-gray-400">{item.emailAddress}</td>
-              <td className="py-3 px-4 text-gray-400">{item.mobileNo || '-'}</td>
-              <td className="py-3 px-4 text-gray-400">{item.department?.name || '-'}</td>
+              <td className="py-3 px-4 text-gray-400">
+                {item.mobileNo || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-400">
+                {item.department?.name || "-"}
+              </td>
               <td className="py-3 px-4">
                 <div className="flex gap-2 justify-end">
                   <button
@@ -342,7 +380,9 @@ function StaffTable({
         </tbody>
       </table>
       {data.length === 0 && (
-        <div className="text-center py-12 text-gray-400">No staff members found</div>
+        <div className="text-center py-12 text-gray-400">
+          No staff members found
+        </div>
       )}
     </div>
   );
@@ -363,20 +403,35 @@ function DepartmentsTable({
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Code</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Staff Count</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Remarks</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">Actions</th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Name
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Code
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Staff Count
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Remarks
+            </th>
+            <th className="text-right py-3 px-4 text-gray-400 font-medium">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+            <tr
+              key={item.id}
+              className="border-b border-gray-700/30 hover:bg-gray-700/20"
+            >
               <td className="py-3 px-4 text-white font-medium">{item.name}</td>
-              <td className="py-3 px-4 text-gray-400">{item.code || '-'}</td>
-              <td className="py-3 px-4 text-gray-400">{item._count?.staff || 0}</td>
-              <td className="py-3 px-4 text-gray-400">{item.remarks || '-'}</td>
+              <td className="py-3 px-4 text-gray-400">{item.code || "-"}</td>
+              <td className="py-3 px-4 text-gray-400">
+                {item._count?.staff || 0}
+              </td>
+              <td className="py-3 px-4 text-gray-400">{item.remarks || "-"}</td>
               <td className="py-3 px-4">
                 <div className="flex gap-2 justify-end">
                   <button
@@ -398,7 +453,9 @@ function DepartmentsTable({
         </tbody>
       </table>
       {data.length === 0 && (
-        <div className="text-center py-12 text-gray-400">No departments found</div>
+        <div className="text-center py-12 text-gray-400">
+          No departments found
+        </div>
       )}
     </div>
   );
@@ -419,20 +476,37 @@ function VenuesTable({
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-700/50">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Name</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Location</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Capacity</th>
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">Remarks</th>
-            <th className="text-right py-3 px-4 text-gray-400 font-medium">Actions</th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Name
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Location
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Capacity
+            </th>
+            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+              Remarks
+            </th>
+            <th className="text-right py-3 px-4 text-gray-400 font-medium">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           {data.map((item) => (
-            <tr key={item.id} className="border-b border-gray-700/30 hover:bg-gray-700/20">
+            <tr
+              key={item.id}
+              className="border-b border-gray-700/30 hover:bg-gray-700/20"
+            >
               <td className="py-3 px-4 text-white font-medium">{item.name}</td>
-              <td className="py-3 px-4 text-gray-400">{item.location || '-'}</td>
-              <td className="py-3 px-4 text-gray-400">{item.capacity || '-'}</td>
-              <td className="py-3 px-4 text-gray-400">{item.remarks || '-'}</td>
+              <td className="py-3 px-4 text-gray-400">
+                {item.location || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-400">
+                {item.capacity || "-"}
+              </td>
+              <td className="py-3 px-4 text-gray-400">{item.remarks || "-"}</td>
               <td className="py-3 px-4">
                 <div className="flex gap-2 justify-end">
                   <button
@@ -482,21 +556,21 @@ function Modal({
     setLoading(true);
 
     const endpoints: Record<Tab, string> = {
-      'meeting-types': '/api/meeting-types',
-      'staff': '/api/staff',
-      'departments': '/api/departments',
-      'venues': '/api/venues',
+      "meeting-types": "/api/meeting-types",
+      staff: "/api/staff",
+      departments: "/api/departments",
+      venues: "/api/venues",
     };
 
     try {
       const url = editingItem
         ? `${endpoints[activeTab]}/${editingItem.id}`
         : endpoints[activeTab];
-      const method = editingItem ? 'PUT' : 'POST';
+      const method = editingItem ? "PUT" : "POST";
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -504,11 +578,11 @@ function Modal({
         onSuccess();
       } else {
         const error = await response.json();
-        alert(error.error || 'Failed to save');
+        alert(error.error || "Failed to save");
       }
     } catch (error) {
-      console.error('Error saving:', error);
-      alert('Failed to save');
+      console.error("Error saving:", error);
+      alert("Failed to save");
     } finally {
       setLoading(false);
     }
@@ -518,15 +592,15 @@ function Modal({
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 w-full max-w-md">
         <h2 className="text-xl font-bold text-white mb-4">
-          {editingItem ? 'Edit' : 'Add'}{' '}
-          {activeTab === 'meeting-types' && 'Meeting Type'}
-          {activeTab === 'staff' && 'Staff Member'}
-          {activeTab === 'departments' && 'Department'}
-          {activeTab === 'venues' && 'Venue'}
+          {editingItem ? "Edit" : "Add"}{" "}
+          {activeTab === "meeting-types" && "Meeting Type"}
+          {activeTab === "staff" && "Staff Member"}
+          {activeTab === "departments" && "Department"}
+          {activeTab === "venues" && "Venue"}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {activeTab === 'meeting-types' && (
+          {activeTab === "meeting-types" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -534,10 +608,18 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.meetingTypeName || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, meetingTypeName: e.target.value })
-                  }
+                  value={formData.meetingTypeName || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const formattedValue =
+                      value.length === 1
+                        ? value.toUpperCase()
+                        : value.charAt(0).toUpperCase() + value.slice(1);
+                    setFormData({
+                      ...formData,
+                      meetingTypeName: formattedValue,
+                    });
+                  }}
                   required
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
@@ -547,7 +629,7 @@ function Modal({
                   Remarks
                 </label>
                 <textarea
-                  value={formData.remarks || ''}
+                  value={formData.remarks || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, remarks: e.target.value })
                   }
@@ -558,7 +640,7 @@ function Modal({
             </>
           )}
 
-          {activeTab === 'staff' && (
+          {activeTab === "staff" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -566,10 +648,15 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.staffName || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, staffName: e.target.value })
-                  }
+                  value={formData.staffName || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const formattedValue =
+                      value.length === 1
+                        ? value.toUpperCase()
+                        : value.charAt(0).toUpperCase() + value.slice(1);
+                    setFormData({ ...formData, staffName: formattedValue });
+                  }}
                   required
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
@@ -580,7 +667,7 @@ function Modal({
                 </label>
                 <input
                   type="email"
-                  value={formData.emailAddress || ''}
+                  value={formData.emailAddress || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, emailAddress: e.target.value })
                   }
@@ -594,38 +681,34 @@ function Modal({
                 </label>
                 <input
                   type="tel"
-                  value={formData.mobileNo || ''}
+                  value={formData.mobileNo || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, mobileNo: e.target.value })
                   }
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Department
-                </label>
-                <select
-                  value={formData.departmentId || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, departmentId: e.target.value || null })
-                  }
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SearchableDropdown
+                label="Department"
+                value={formData.departmentId || ""}
+                onChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    departmentId: value || null,
+                  })
+                }
+                options={departments.map((dept) => ({
+                  value: dept.id,
+                  label: dept.name,
+                }))}
+                placeholder="Department"
+              />
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Remarks
                 </label>
                 <textarea
-                  value={formData.remarks || ''}
+                  value={formData.remarks || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, remarks: e.target.value })
                   }
@@ -636,7 +719,7 @@ function Modal({
             </>
           )}
 
-          {activeTab === 'departments' && (
+          {activeTab === "departments" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -644,10 +727,15 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.name || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  value={formData.name || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const formattedValue =
+                      value.length === 1
+                        ? value.toUpperCase()
+                        : value.charAt(0).toUpperCase() + value.slice(1);
+                    setFormData({ ...formData, name: formattedValue });
+                  }}
                   required
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
@@ -658,11 +746,14 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.code || ''}
+                  value={formData.code || ""}
                   onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
+                    setFormData({
+                      ...formData,
+                      code: e.target.value.toUpperCase(),
+                    })
                   }
-                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
+                  className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white uppercase"
                 />
               </div>
               <div>
@@ -670,7 +761,7 @@ function Modal({
                   Remarks
                 </label>
                 <textarea
-                  value={formData.remarks || ''}
+                  value={formData.remarks || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, remarks: e.target.value })
                   }
@@ -681,7 +772,7 @@ function Modal({
             </>
           )}
 
-          {activeTab === 'venues' && (
+          {activeTab === "venues" && (
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -689,10 +780,15 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.name || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
+                  value={formData.name || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const formattedValue =
+                      value.length === 1
+                        ? value.toUpperCase()
+                        : value.charAt(0).toUpperCase() + value.slice(1);
+                    setFormData({ ...formData, name: formattedValue });
+                  }}
                   required
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
@@ -703,10 +799,15 @@ function Modal({
                 </label>
                 <input
                   type="text"
-                  value={formData.location || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
+                  value={formData.location || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const formattedValue =
+                      value.length === 1
+                        ? value.toUpperCase()
+                        : value.charAt(0).toUpperCase() + value.slice(1);
+                    setFormData({ ...formData, location: formattedValue });
+                  }}
                   className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white"
                 />
               </div>
@@ -716,7 +817,7 @@ function Modal({
                 </label>
                 <input
                   type="number"
-                  value={formData.capacity || ''}
+                  value={formData.capacity || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, capacity: e.target.value })
                   }
@@ -728,7 +829,7 @@ function Modal({
                   Remarks
                 </label>
                 <textarea
-                  value={formData.remarks || ''}
+                  value={formData.remarks || ""}
                   onChange={(e) =>
                     setFormData({ ...formData, remarks: e.target.value })
                   }
@@ -752,7 +853,7 @@ function Modal({
               disabled={loading}
               className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg font-medium transition-all disabled:opacity-50"
             >
-              {loading ? 'Saving...' : 'Save'}
+              {loading ? "Saving..." : "Save"}
             </button>
           </div>
         </form>

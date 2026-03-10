@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserDisplayName } from '@/lib/utils/apiHelpers';
 
 export async function GET() {
   try {
@@ -22,7 +23,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { staffName, mobileNo, emailAddress, departmentId, remarks } = body;
+    const { 
+      staffName, 
+      employeeId,
+      designation,
+      emailAddress, 
+      mobileNo, 
+      dateOfBirth,
+      gender,
+      nationality,
+      motherTongue,
+      bloodGroup,
+      address,
+      emergencyContactName,
+      emergencyContactNumber,
+      dateOfJoining,
+      departmentId, 
+      remarks 
+    } = body;
 
     if (!staffName || !emailAddress) {
       return NextResponse.json(
@@ -31,13 +49,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userName = await getUserDisplayName(request);
+
     const staff = await prisma.staff.create({
       data: {
         staffName,
-        mobileNo,
+        employeeId: employeeId || undefined,
+        designation: designation || undefined,
         emailAddress,
-        departmentId,
-        remarks,
+        mobileNo: mobileNo || undefined,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        gender: gender || undefined,
+        nationality: nationality || undefined,
+        motherTongue: motherTongue || undefined,
+        bloodGroup: bloodGroup || undefined,
+        address: address || undefined,
+        emergencyContactName: emergencyContactName || undefined,
+        emergencyContactNumber: emergencyContactNumber || undefined,
+        dateOfJoining: dateOfJoining ? new Date(dateOfJoining) : undefined,
+        departmentId: departmentId || undefined,
+        remarks: remarks || undefined,
+        createdBy: userName,
       },
       include: {
         department: true,

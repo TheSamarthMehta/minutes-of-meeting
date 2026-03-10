@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+import { getUserDisplayName } from '@/lib/utils/apiHelpers';
 
 export async function GET() {
   try {
@@ -33,12 +34,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const userName = await getUserDisplayName(request);
+
     const venue = await prisma.venue.create({
       data: {
         name,
         location,
         capacity: capacity ? parseInt(capacity) : null,
         remarks,
+        createdBy: userName,
+        createdBy: userName,
       },
     });
 
