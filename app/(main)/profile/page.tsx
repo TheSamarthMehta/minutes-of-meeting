@@ -215,9 +215,9 @@ export default function ProfilePage() {
                   className={`px-3 py-1 text-xs font-medium rounded-full ${
                     user?.role === "ADMIN"
                       ? "bg-red-500/10 text-red-400"
-                      : user?.role === "MEETING_ORGANIZER"
-                        ? "bg-blue-500/10 text-blue-400"
-                        : "bg-gray-500/10 text-gray-400"
+                      : user?.role === "MANAGER"
+                        ? "bg-yellow-500/10 text-yellow-400"
+                        : "bg-blue-500/10 text-blue-400"
                   }`}
                 >
                   {user?.role?.replace("_", " ") || "STAFF"}

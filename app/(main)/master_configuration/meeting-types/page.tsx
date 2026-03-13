@@ -51,7 +51,7 @@ export default function MeetingTypesPage() {
   });
   const [formErrors, setFormErrors] = useState<Partial<FormData>>({});
   const [isSaving, setIsSaving] = useState(false);
-  const { toast, showToast } = useToast();
+  const { toast, showToast, dismissToast } = useToast();
 
   useEffect(() => {
     fetchMeetingTypes();
@@ -220,7 +220,7 @@ export default function MeetingTypesPage() {
           )}
           <span className="font-medium">{toast.message}</span>
           <button
-            onClick={() => setToast(null)}
+            onClick={dismissToast}
             className="ml-2 hover:bg-white/10 p-1 rounded transition-colors"
           >
             <X size={16} />

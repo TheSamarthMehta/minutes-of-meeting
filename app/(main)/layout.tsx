@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuthStore } from "@/lib/store/authStore";
+import { useFCMToken } from "@/lib/hooks/useFCMToken";
+import { signOut } from "next-auth/react";
 import {
   LayoutDashboard,
   Calendar,
@@ -30,6 +32,9 @@ import {
   FileBarChart,
   FileSpreadsheet,
   Download,
+  Shield,
+  UserCog,
+  UserRoundCog,
 } from "lucide-react";
 
 export default function MainLayout({
@@ -41,18 +46,39 @@ export default function MainLayout({
   const pathname = usePathname();
   const { logout, user } = useAuthStore();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = async () => {
+  // Register FCM token after auth is ready
+  useFCMToken();
+
+  const role = user?.role ?? "STAFF";
+  const isAdmin = role === "ADMIN";
+  const isManagerOrAbove = role === "MANAGER" || role === "ADMIN";
+
+  const handleLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    setShowLogoutModal(false);
     try {
-      // Call logout API endpoint
-      await fetch("/api/auth/logout", { method: "POST" });
+      // Clear both token-based auth and NextAuth session in parallel.
+      await Promise.allSettled([
+        fetch("/api/auth/logout", { method: "POST" }),
+        signOut({ redirect: false, callbackUrl: "/login" }),
+      ]);
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // Clear local state and redirect
+      // Clear local Zustand state and redirect
       logout();
       router.push("/login");
+      router.refresh();
     }
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   return (
@@ -105,36 +131,40 @@ export default function MainLayout({
             isCollapsed={!isSidebarOpen}
           />
 
-          <NavItemWithChildren
-            icon={<Database size={20} />}
-            label="Master Config"
-            pathname={pathname}
-            isCollapsed={!isSidebarOpen}
-            basePath="/master_configuration"
-            children={[
-              {
-                href: "/master_configuration/departments",
-                label: "Departments",
-                icon: <Building2 size={18} />,
-              },
-              {
-                href: "/master_configuration/meeting-types",
-                label: "Meeting Types",
-                icon: <CalendarClock size={18} />,
-              },
-              {
-                href: "/master_configuration/staff",
-                label: "Staff",
-                icon: <UsersRound size={18} />,
-              },
-              {
-                href: "/master_configuration/venues",
-                label: "Venues",
-                icon: <MapPin size={18} />,
-              },
-            ]}
-          />
+          {/* Master Config — Admin only */}
+          {isAdmin && (
+            <NavItemWithChildren
+              icon={<Database size={20} />}
+              label="Master Config"
+              pathname={pathname}
+              isCollapsed={!isSidebarOpen}
+              basePath="/master_configuration"
+              children={[
+                {
+                  href: "/master_configuration/departments",
+                  label: "Departments",
+                  icon: <Building2 size={18} />,
+                },
+                {
+                  href: "/master_configuration/meeting-types",
+                  label: "Meeting Types",
+                  icon: <CalendarClock size={18} />,
+                },
+                {
+                  href: "/master_configuration/staff",
+                  label: "Staff",
+                  icon: <UsersRound size={18} />,
+                },
+                {
+                  href: "/master_configuration/venues",
+                  label: "Venues",
+                  icon: <MapPin size={18} />,
+                },
+              ]}
+            />
+          )}
 
+          {/* Meetings — Everyone */}
           <NavItemWithChildren
             icon={<Calendar size={20} />}
             label="Meetings"
@@ -147,24 +177,29 @@ export default function MainLayout({
                 label: "Calendar",
                 icon: <Calendar size={18} />,
               },
-              {
-                href: "/meeting_management/create",
-                label: "Create",
-                icon: <CalendarPlus size={18} />,
-              },
+              ...(isManagerOrAbove
+                ? [
+                    {
+                      href: "/meeting_management/create",
+                      label: "Create",
+                      icon: <CalendarPlus size={18} />,
+                    },
+                    {
+                      href: "/meeting_management/cancel",
+                      label: "Cancel",
+                      icon: <CalendarX size={18} />,
+                    },
+                  ]
+                : []),
               {
                 href: "/meeting_management/details",
                 label: "Details",
                 icon: <Info size={18} />,
               },
-              {
-                href: "/meeting_management/cancel",
-                label: "Cancel",
-                icon: <CalendarX size={18} />,
-              },
             ]}
           />
 
+          {/* Attendance — Everyone */}
           <NavItemWithChildren
             icon={<UserCheck size={20} />}
             label="Attendance"
@@ -177,11 +212,15 @@ export default function MainLayout({
                 label: "Mark Attendance",
                 icon: <ClipboardCheck size={18} />,
               },
-              {
-                href: "/attendance_participants/add-members",
-                label: "Add Members",
-                icon: <UserPlus size={18} />,
-              },
+              ...(isManagerOrAbove
+                ? [
+                    {
+                      href: "/attendance_participants/add-members",
+                      label: "Add Members",
+                      icon: <UserPlus size={18} />,
+                    },
+                  ]
+                : []),
               {
                 href: "/attendance_participants/summary",
                 label: "Summary",
@@ -190,6 +229,7 @@ export default function MainLayout({
             ]}
           />
 
+          {/* Reports — Everyone */}
           <NavItemWithChildren
             icon={<BarChart3 size={20} />}
             label="Reports"
@@ -207,11 +247,15 @@ export default function MainLayout({
                 label: "Meeting Wise",
                 icon: <FileSpreadsheet size={18} />,
               },
-              {
-                href: "/reports_analysis/export",
-                label: "Export",
-                icon: <Download size={18} />,
-              },
+              ...(isManagerOrAbove
+                ? [
+                    {
+                      href: "/reports_analysis/export",
+                      label: "Export",
+                      icon: <Download size={18} />,
+                    },
+                  ]
+                : []),
             ]}
           />
 
@@ -222,11 +266,50 @@ export default function MainLayout({
             pathname={pathname}
             isCollapsed={!isSidebarOpen}
           />
+
+          {/* Admin Panel — Admin only */}
+          {isAdmin && (
+            <NavItemWithChildren
+              icon={<Shield size={20} />}
+              label="Admin Panel"
+              pathname={pathname}
+              isCollapsed={!isSidebarOpen}
+              basePath="/admin"
+              children={[
+                {
+                  href: "/admin/team-management",
+                  label: "Team Management",
+                  icon: <UsersRound size={18} />,
+                },
+                {
+                  href: "/admin/create-manager",
+                  label: "Create Manager",
+                  icon: <UserCog size={18} />,
+                },
+                {
+                  href: "/admin/create-staff",
+                  label: "Create Staff",
+                  icon: <UserRoundCog size={18} />,
+                },
+              ]}
+            />
+          )}
+
+          {/* Manager Panel — Manager only (create staff) */}
+          {role === "MANAGER" && (
+            <NavItem
+              href="/admin/create-staff"
+              icon={<UserRoundCog size={20} />}
+              label="Create Staff"
+              pathname={pathname}
+              isCollapsed={!isSidebarOpen}
+            />
+          )}
         </nav>
 
         <div className="p-4 border-t border-gray-800">
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className={`flex ${
               !isSidebarOpen
                 ? "flex-col items-center gap-1 px-2 py-3"
@@ -274,6 +357,44 @@ export default function MainLayout({
 
         <div className="p-8 max-w-7xl mx-auto">{children}</div>
       </main>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1a1a1a] border border-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in duration-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                <LogOut className="text-red-500" size={24} />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold text-white">Sign Out</h3>
+                <p className="text-sm text-gray-400">Confirm your action</p>
+              </div>
+            </div>
+
+            <p className="text-gray-300 mb-6">
+              Are you sure you want to sign out? You'll need to log in again to
+              access your account.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={cancelLogout}
+                className="flex-1 px-4 py-3 bg-[#2a2a2a] border border-gray-700 text-gray-300 rounded-lg hover:bg-[#333] transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLogout}
+                className="flex-1 px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <LogOut size={18} />
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

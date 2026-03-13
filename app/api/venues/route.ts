@@ -10,7 +10,7 @@ export async function GET() {
           select: { meetings: true },
         },
       },
-      orderBy: { created: 'desc' },
+      orderBy: { created: 'asc' },
     });
     return NextResponse.json(venues);
   } catch (error) {
@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
         location,
         capacity: capacity ? parseInt(capacity) : null,
         remarks,
-        createdBy: userName,
         createdBy: userName,
       },
     });

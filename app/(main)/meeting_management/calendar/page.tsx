@@ -1,16 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Calendar as CalendarIcon,
   List,
+  Search,
   ChevronLeft,
   ChevronRight,
   Eye,
+  ExternalLink,
   Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/app/components/ui/toast";
+import {
+  generateCalendarDays,
+  getMeetingsForDate,
+  getStatusColor,
+  isToday,
+} from "@/lib/utils/calendar";
 
 interface Meeting {
   id: string;
@@ -38,6 +46,7 @@ export default function CalendarPage() {
   const [view, setView] = useState<"calendar" | "list">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { showToast } = useToast();
 
@@ -64,91 +73,30 @@ export default function CalendarPage() {
     }
   };
 
-  // Get meetings for a specific date
-  const getMeetingsForDate = (date: Date) => {
-    return meetings.filter((meeting) => {
-      const meetingDate = new Date(meeting.date);
+  const filteredMeetings = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    const sorted = [...meetings].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    if (!query) return sorted;
+
+    return sorted.filter((meeting) => {
       return (
-        meetingDate.getDate() === date.getDate() &&
-        meetingDate.getMonth() === date.getMonth() &&
-        meetingDate.getFullYear() === date.getFullYear()
+        meeting.title.toLowerCase().includes(query) ||
+        meeting.agenda?.toLowerCase().includes(query) ||
+        meeting.description?.toLowerCase().includes(query) ||
+        meeting.meetingType?.name.toLowerCase().includes(query) ||
+        meeting.venue?.name.toLowerCase().includes(query) ||
+        meeting.department?.name.toLowerCase().includes(query)
       );
     });
-  };
+  }, [meetings, searchQuery]);
 
-  // Generate calendar days
-  const generateCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-
-    // First day of the month
-    const firstDay = new Date(year, month, 1);
-    const startingDayOfWeek = firstDay.getDay();
-
-    // Last day of the month
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-
-    // Previous month's last days
-    const prevMonthLastDay = new Date(year, month, 0).getDate();
-
-    const days = [];
-
-    // Add previous month's days
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      days.push({
-        date: new Date(year, month - 1, prevMonthLastDay - i),
-        isCurrentMonth: false,
-      });
-    }
-
-    // Add current month's days
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push({
-        date: new Date(year, month, i),
-        isCurrentMonth: true,
-      });
-    }
-
-    // Add next month's days to complete the grid
-    const remainingDays = 42 - days.length; // 6 rows x 7 days
-    for (let i = 1; i <= remainingDays; i++) {
-      days.push({
-        date: new Date(year, month + 1, i),
-        isCurrentMonth: false,
-      });
-    }
-
-    return days;
-  };
-
-  // Check if a date is today
-  const isToday = (date: Date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-
-  // Get status color
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "UPCOMING":
-        return "bg-blue-500/10 text-blue-400";
-      case "ONGOING":
-        return "bg-green-500/10 text-green-400";
-      case "COMPLETED":
-        return "bg-gray-500/10 text-gray-400";
-      case "CANCELLED":
-        return "bg-red-500/10 text-red-400";
-      default:
-        return "bg-blue-500/10 text-blue-400";
-    }
-  };
-
-  const calendarDays = generateCalendarDays();
+  const calendarDays = useMemo(
+    () => generateCalendarDays(currentDate),
+    [currentDate],
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -166,39 +114,52 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-2 bg-[#1a1a1a] border border-gray-800 rounded-lg p-1">
-          <button
-            onClick={() => setView("calendar")}
-            className={`px-4 py-2 rounded-md transition-all ${
-              view === "calendar"
-                ? "bg-purple-600 text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <CalendarIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={`px-4 py-2 rounded-md transition-all ${
-              view === "list"
-                ? "bg-purple-600 text-white"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            <List className="w-4 h-4" />
-          </button>
+        {/* Controls */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-[#1a1a1a] border border-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setView("calendar")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                view === "calendar"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <CalendarIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setView("list")}
+              className={`px-4 py-2 rounded-md transition-all ${
+                view === "list"
+                  ? "bg-purple-600 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
       {view === "list" ? (
         /* List View */
         <div className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search meetings by title, agenda, type, venue..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#121212] border border-gray-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-purple-500/60"
+            />
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
             </div>
-          ) : meetings.length === 0 ? (
+          ) : filteredMeetings.length === 0 ? (
             <div className="bg-linear-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-xl p-12 text-center">
               <CalendarIcon className="w-16 h-16 text-gray-600 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">
@@ -208,14 +169,14 @@ export default function CalendarPage() {
                 Start by creating your first meeting
               </p>
               <Link
-                href="/dashboard/meeting_management/create"
+                href="/meeting_management/create"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 Create Meeting
               </Link>
             </div>
           ) : (
-            meetings.map((meeting) => (
+            filteredMeetings.map((meeting) => (
               <div
                 key={meeting.id}
                 className="bg-linear-to-br from-[#1a1a1a] to-[#0f0f0f] border border-gray-800 rounded-xl p-6 hover:border-gray-700 transition-all group"
@@ -255,13 +216,17 @@ export default function CalendarPage() {
                       </p>
                     )}
                   </div>
-                  <Link
-                    href={`/dashboard/meeting_management/details?id=${meeting.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-600/10 text-purple-400 rounded-lg hover:bg-purple-600/20 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Eye size={16} />
-                    View
-                  </Link>
+
+                  <div className="flex flex-wrap items-center gap-2 ml-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <Link
+                      href={`/meeting_management/details?id=${meeting.id}`}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-purple-600/10 text-purple-400 rounded-lg hover:bg-purple-600/20 transition-colors text-xs"
+                    >
+                      <Eye size={14} />
+                      <ExternalLink size={13} />
+                      View
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))
@@ -333,7 +298,7 @@ export default function CalendarPage() {
                   ),
                 )}
                 {calendarDays.map((day, index) => {
-                  const dayMeetings = getMeetingsForDate(day.date);
+                  const dayMeetings = getMeetingsForDate(meetings, day.date);
                   const today = isToday(day.date);
 
                   return (
@@ -356,7 +321,7 @@ export default function CalendarPage() {
                         {dayMeetings.slice(0, 2).map((meeting) => (
                           <Link
                             key={meeting.id}
-                            href={`/dashboard/meeting_management/details?id=${meeting.id}`}
+                            href={`/meeting_management/details?id=${meeting.id}`}
                             className="block text-xs bg-purple-500/20 text-purple-300 rounded px-1 py-0.5 truncate hover:bg-purple-500/30 transition-colors"
                             title={meeting.title}
                           >

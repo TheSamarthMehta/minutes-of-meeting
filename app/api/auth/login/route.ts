@@ -13,7 +13,19 @@ export async function POST(request: NextRequest) {
       where: { email: validatedData.email },
     });
 
-    if (!user || !(await bcrypt.compare(validatedData.password, user.password))) {
+    if (!user || !user.password) {
+      return NextResponse.json(
+        { error: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      validatedData.password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }

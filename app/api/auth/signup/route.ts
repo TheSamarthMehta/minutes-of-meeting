@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/db";
 import { signupSchema } from "@/lib/validations/auth";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import { generateToken } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
@@ -45,18 +43,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // Generate JWT token using jose
+    const token = await generateToken({ 
+      userId: user.id, 
+      email: user.email,
+      role: user.role 
+    });
 
-    return NextResponse.json(
+    // Create response with cookie
+    const response = NextResponse.json(
       {
         message: "User created successfully",
         user,
@@ -64,6 +59,17 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+
+    // Set token in cookie (same as login route)
+    response.cookies.set("token", token, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60, // 1 hour in seconds
+    });
+
+    return response;
   } catch (error: any) {
     console.error("Signup error:", error);
 

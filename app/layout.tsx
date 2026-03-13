@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./components/ui/toast";
 import { AuthProvider } from "./components/AuthProvider";
+import { NextAuthProvider } from "./components/NextAuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "MinutesMaster - Meeting Documentation Made Easy",
-  description: "Transform your meeting documentation process with MinutesMaster",
+  description:
+    "Transform your meeting documentation process with MinutesMaster",
 };
 
 export default function RootLayout({
@@ -29,11 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ToastProvider>
+        <NextAuthProvider>
+          <ToastProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ToastProvider>
+        </NextAuthProvider>
       </body>
     </html>
   );

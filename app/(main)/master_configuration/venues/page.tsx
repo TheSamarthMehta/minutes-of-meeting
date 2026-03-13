@@ -318,7 +318,7 @@ export default function VenuesPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Venue Name *
+                  Venue Name <span className="text-red-400">*</span>
                 </label>
                 <input
                   type="text"

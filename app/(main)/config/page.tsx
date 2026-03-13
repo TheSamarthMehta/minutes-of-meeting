@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Edit2, Trash2 } from "lucide-react";
 import { SearchableDropdown } from "@/app/components/SearchableDropdown";
 import { ActionButtons } from "@/app/components/ActionButtons";
 

@@ -21,6 +21,9 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role      @default(STAFF)
+  fcmToken      String?   // Firebase Cloud Messaging device token
+  createdBy     String?   // ID of the user who created this account
+  organizationId String?  // Optional organisation identifier
   meetings      Meeting[]
   accounts      Account[]
   sessions      Session[]
@@ -206,6 +209,7 @@ model ActionItem {
 
 enum Role {
   STAFF
+  MANAGER
   ADMIN
 }
 

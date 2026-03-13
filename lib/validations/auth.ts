@@ -23,7 +23,7 @@ export const signupSchema = z.object({
       (password) => !isCommonPassword(password),
       "This password is too common and easily guessable. Please choose a more unique password"
     ),
-  role: z.enum(["STAFF", "ADMIN"]).optional().default("STAFF"),
+  role: z.enum(["STAFF", "MANAGER", "ADMIN"]).optional().default("STAFF"),
 });
 
 // Login validation schema
