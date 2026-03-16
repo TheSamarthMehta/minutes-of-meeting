@@ -2,10 +2,6 @@ import * as admin from "firebase-admin";
 
 let app: admin.app.App | null = null;
 
-/**
- * Returns an initialised Firebase Admin app (singleton).
- * Reads credentials from environment variables.
- */
 function getFirebaseApp(): admin.app.App {
   if (app) return app;
 
@@ -38,10 +34,6 @@ export interface FCMPayload {
   data?: Record<string, string>;
 }
 
-/**
- * Send a push notification to a single FCM token.
- * Silently swaps token errors so a bad token never crashes caller logic.
- */
 export async function sendPushNotification(
   fcmToken: string,
   payload: FCMPayload
@@ -55,16 +47,12 @@ export async function sendPushNotification(
       android: { priority: "high" },
       apns: { payload: { aps: { contentAvailable: true } } },
     });
-    console.log(`[FCM] Notification sent to token ${fcmToken.slice(0, 20)}…`);
+    console.log(`[FCM] Notification sent to token ${fcmToken.slice(0, 20)}...`);
   } catch (err: any) {
-    // Log but do not throw – a failed notification must never block the main flow
     console.error("[FCM] sendPushNotification error:", err?.message ?? err);
   }
 }
 
-/**
- * Send to multiple tokens, ignoring individual failures.
- */
 export async function sendPushToMany(
   tokens: string[],
   payload: FCMPayload

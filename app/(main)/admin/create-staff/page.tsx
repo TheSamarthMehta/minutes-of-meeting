@@ -24,6 +24,7 @@ export default function CreateStaffPage() {
   const [form, setForm] = useState<FormState>(INITIAL);
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,6 +38,7 @@ export default function CreateStaffPage() {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
+    setWarning(null);
 
     try {
       const res = await fetch("/api/admin/create-staff", {
@@ -55,9 +57,17 @@ export default function CreateStaffPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create staff");
 
-      setSuccess(
-        `Staff member "${data.user?.name}" created successfully. A welcome email has been sent.`,
-      );
+      setSuccess(`Staff member "${data.user?.name}" created successfully.`);
+
+      if (data.email?.sent) {
+        setWarning(null);
+      } else {
+        setWarning(
+          data.email?.reason ||
+            "Welcome email was not sent. Please check SMTP configuration.",
+        );
+      }
+
       setForm(INITIAL);
     } catch (err: any) {
       setError(err.message);
@@ -92,6 +102,12 @@ export default function CreateStaffPage() {
         <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
           <AlertTriangle size={18} className="shrink-0 mt-0.5" />
           {error}
+        </div>
+      )}
+      {warning && (
+        <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-amber-300 text-sm">
+          <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+          {warning}
         </div>
       )}
 

@@ -1,6 +1,5 @@
 // Firebase Cloud Messaging Service Worker
-// Place this file in /public/firebase-messaging-sw.js
-// It must be at the root of your site so FCM can register the push subscription.
+// Must be served from /public/firebase-messaging-sw.js
 
 importScripts(
   "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js",
@@ -9,20 +8,16 @@ importScripts(
   "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js",
 );
 
-// These values are injected at runtime from the client, OR you can hard-code
-// your NEXT_PUBLIC values here since this file is served as a static asset.
-// IMPORTANT: Do NOT put sensitive server-only keys here — only public client config.
 firebase.initializeApp({
-  apiKey: self.__FIREBASE_API_KEY__ || "",
-  authDomain: self.__FIREBASE_AUTH_DOMAIN__ || "",
-  projectId: self.__FIREBASE_PROJECT_ID__ || "",
-  messagingSenderId: self.__FIREBASE_MESSAGING_SENDER_ID__ || "",
-  appId: self.__FIREBASE_APP_ID__ || "",
+  apiKey: "AIzaSyCm5ab7U2X68nVH1uj8Yzm9sdYOFhjA9WQ",
+  authDomain: "minutes-of-meeting-490003.firebaseapp.com",
+  projectId: "minutes-of-meeting-490003",
+  messagingSenderId: "206409181885",
+  appId: "1:206409181885:web:9c44bcee034842c27b25d4",
 });
 
 const messaging = firebase.messaging();
 
-// Handle background push messages
 messaging.onBackgroundMessage((payload) => {
   const { title = "New Notification", body = "" } = payload.notification ?? {};
 
@@ -34,7 +29,6 @@ messaging.onBackgroundMessage((payload) => {
   });
 });
 
-// Handle notification click — focus or open the app
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = event.notification.data?.url || "/dashboard";

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   ArrowLeft,
   Calendar,
@@ -26,99 +26,94 @@ interface Venue {
   name: string;
 }
 
-interface PickerOption {
-  value: string;
-  label: string;
-}
-
-interface PickerDropdownProps {
+interface NativePickerFieldProps {
   name: string;
+  type: "date" | "time";
   value: string;
   onChange: (value: string) => void;
-  options: PickerOption[];
   placeholder: string;
   icon: React.ReactNode;
   error?: string;
+  min?: string;
+  step?: number;
 }
 
-function PickerDropdown({
+function formatDateDisplay(value: string): string {
+  if (!value) return "";
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return value;
+  const date = new Date(year, month - 1, day);
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatTimeDisplay(value: string): string {
+  if (!value) return "";
+  const [h, m] = value.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return value;
+  const date = new Date();
+  date.setHours(h, m, 0, 0);
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function NativePickerField({
   name,
+  type,
   value,
   onChange,
-  options,
   placeholder,
   icon,
   error,
-}: PickerDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const handleOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  const selected = options.find((opt) => opt.value === value);
+  min,
+  step,
+}: NativePickerFieldProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const displayValue =
+    type === "date" ? formatDateDisplay(value) : formatTimeDisplay(value);
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative">
       <button
         type="button"
         data-field={name}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          if (inputRef.current?.showPicker) {
+            inputRef.current.showPicker();
+          } else {
+            inputRef.current?.focus();
+          }
+        }}
         className={`w-full bg-[#0f0f0f] border ${
           error ? "border-red-500" : "border-gray-800"
         } rounded-lg px-4 py-3 text-left flex items-center justify-between gap-3 hover:border-gray-700 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all`}
       >
         <span className="flex items-center gap-2 min-w-0">
           <span className="text-gray-300 shrink-0">{icon}</span>
-          <span className={selected ? "text-white" : "text-gray-500"}>
-            {selected?.label || placeholder}
+          <span className={displayValue ? "text-white" : "text-gray-500"}>
+            {displayValue || placeholder}
           </span>
         </span>
-        <ChevronDown
-          className={`w-4 h-4 text-gray-400 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
+        <ChevronDown className="w-4 h-4 text-gray-400" />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto rounded-xl border border-gray-700 bg-[#161616] shadow-xl">
-          {options.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-400">
-              No options found
-            </div>
-          ) : (
-            options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  onChange(option.value);
-                  setIsOpen(false);
-                }}
-                className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
-                  option.value === value
-                    ? "bg-purple-500/20 text-white"
-                    : "text-gray-300 hover:bg-[#222]"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))
-          )}
-        </div>
-      )}
+      <input
+        ref={inputRef}
+        name={name}
+        type={type}
+        value={value}
+        min={min}
+        step={step}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute inset-0 z-10 cursor-pointer opacity-0"
+      />
     </div>
   );
 }
@@ -145,75 +140,51 @@ export default function CreateMeetingPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const allTimeOptions = useMemo(() => {
-    const options: PickerOption[] = [];
-    for (let hour = 0; hour < 24; hour += 1) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        const value = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
-        const label = new Date(2000, 0, 1, hour, minute).toLocaleTimeString(
-          "en-US",
-          {
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: true,
-          },
-        );
-        options.push({ value, label });
-      }
-    }
-    return options;
-  }, []);
+  const todayMinDate = new Date().toISOString().split("T")[0];
 
-  const dateOptions = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return Array.from({ length: 120 }, (_, idx) => {
-      const d = new Date(today);
-      d.setDate(today.getDate() + idx);
-      const value = d.toISOString().split("T")[0];
-      const label = d.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      });
-
-      return { value, label };
-    });
-  }, []);
-
-  const startTimeOptions = useMemo(() => {
-    const baseOptions = allTimeOptions.slice(0, -1);
-    if (!formData.date) {
-      return baseOptions;
-    }
-
-    const selectedDate = new Date(formData.date);
+  const getRoundedQuarterTime = () => {
     const now = new Date();
-    const isToday =
-      selectedDate.getFullYear() === now.getFullYear() &&
-      selectedDate.getMonth() === now.getMonth() &&
-      selectedDate.getDate() === now.getDate();
-
-    if (!isToday) {
-      return baseOptions;
-    }
-
     const rounded = new Date(now);
     const nextQuarter = Math.ceil(rounded.getMinutes() / 15) * 15;
     rounded.setMinutes(nextQuarter, 0, 0);
-    const minValue = `${String(rounded.getHours()).padStart(2, "0")}:${String(rounded.getMinutes()).padStart(2, "0")}`;
 
-    return baseOptions.filter((opt) => opt.value >= minValue);
-  }, [allTimeOptions, formData.date]);
-
-  const endTimeOptions = useMemo(() => {
-    if (!formData.startTime) {
-      return allTimeOptions.slice(1);
+    if (rounded.getDate() !== now.getDate()) {
+      return "23:45";
     }
-    return allTimeOptions.filter((opt) => opt.value > formData.startTime);
-  }, [allTimeOptions, formData.startTime]);
+
+    return `${String(rounded.getHours()).padStart(2, "0")}:${String(
+      rounded.getMinutes(),
+    ).padStart(2, "0")}`;
+  };
+
+  const addMinutes = (time: string, minutesToAdd: number) => {
+    if (!time) return "";
+    const [hours, minutes] = time.split(":").map(Number);
+    if (Number.isNaN(hours) || Number.isNaN(minutes)) return "";
+    const total = hours * 60 + minutes + minutesToAdd;
+    if (total >= 24 * 60) return "23:59";
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+
+  const isSelectedDateToday = (() => {
+    if (!formData.date) return false;
+    const selected = new Date(formData.date);
+    const now = new Date();
+    return (
+      selected.getFullYear() === now.getFullYear() &&
+      selected.getMonth() === now.getMonth() &&
+      selected.getDate() === now.getDate()
+    );
+  })();
+
+  const startTimeMin = isSelectedDateToday
+    ? getRoundedQuarterTime()
+    : undefined;
+  const endTimeMin = formData.startTime
+    ? addMinutes(formData.startTime, 15)
+    : startTimeMin;
 
   // Fetch meeting types
   useEffect(() => {
@@ -550,8 +521,9 @@ export default function CreateMeetingPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Date <span className="text-red-400">*</span>
               </label>
-              <PickerDropdown
+              <NativePickerField
                 name="date"
+                type="date"
                 value={formData.date}
                 onChange={(value) => {
                   setFormData({ ...formData, date: value });
@@ -559,10 +531,10 @@ export default function CreateMeetingPage() {
                     setErrors({ ...errors, date: "" });
                   }
                 }}
-                options={dateOptions}
                 placeholder="Select a date"
                 icon={<Calendar className="w-4 h-4" />}
                 error={errors.date}
+                min={todayMinDate}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-400">{errors.date}</p>
@@ -573,38 +545,31 @@ export default function CreateMeetingPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Start Time <span className="text-red-400">*</span>
               </label>
-              <PickerDropdown
+              <NativePickerField
                 name="startTime"
+                type="time"
                 value={formData.startTime}
                 onChange={(value) => {
-                  const selectedIndex = allTimeOptions.findIndex(
-                    (opt) => opt.value === value,
-                  );
-                  const defaultEnd =
-                    selectedIndex >= 0 &&
-                    selectedIndex + 4 < allTimeOptions.length
-                      ? allTimeOptions[selectedIndex + 4].value
-                      : endTimeOptions[0]?.value || "";
-
                   const shouldResetEnd =
-                    !formData.endTime || formData.endTime <= value;
+                    !!formData.endTime && formData.endTime <= value;
 
                   setFormData({
                     ...formData,
                     startTime: value,
-                    endTime: shouldResetEnd ? defaultEnd : formData.endTime,
+                    endTime: shouldResetEnd ? "" : formData.endTime,
                   });
 
                   setErrors({
                     ...errors,
                     startTime: "",
-                    endTime: shouldResetEnd && defaultEnd ? "" : errors.endTime,
+                    endTime: shouldResetEnd ? "" : errors.endTime,
                   });
                 }}
-                options={startTimeOptions}
                 placeholder="Select start time"
                 icon={<Clock className="w-4 h-4" />}
                 error={errors.startTime}
+                min={startTimeMin}
+                step={900}
               />
               {errors.startTime && (
                 <p className="mt-1 text-sm text-red-400">{errors.startTime}</p>
@@ -615,8 +580,9 @@ export default function CreateMeetingPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 End Time <span className="text-red-400">*</span>
               </label>
-              <PickerDropdown
+              <NativePickerField
                 name="endTime"
+                type="time"
                 value={formData.endTime}
                 onChange={(value) => {
                   setFormData({ ...formData, endTime: value });
@@ -624,10 +590,11 @@ export default function CreateMeetingPage() {
                     setErrors({ ...errors, endTime: "" });
                   }
                 }}
-                options={endTimeOptions}
                 placeholder="Select end time"
                 icon={<Clock className="w-4 h-4" />}
                 error={errors.endTime}
+                min={endTimeMin}
+                step={900}
               />
               {!errors.endTime && formData.startTime && (
                 <p className="mt-1 text-xs text-gray-500">

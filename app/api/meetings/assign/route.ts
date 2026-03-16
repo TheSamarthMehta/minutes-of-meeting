@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
-import { getUserFromHeaders } from "@/lib/auth";
 import { sendPushNotification } from "@/lib/firebase";
+import { logApiError, logApiIncoming, logApiOutgoing } from "@/lib/apiLogger";
 
 /**
  * POST /api/meetings/assign
@@ -11,18 +11,24 @@ import { sendPushNotification } from "@/lib/firebase";
  * Sends an FCM push notification to the assigned user.
  */
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const label = "POST /api/meetings/assign";
+
   const guard = requireRole(request, "MANAGER");
-  if (guard) return guard;
+  if (guard) {
+    logApiOutgoing(label, guard.status, { error: "Forbidden" }, startedAt);
+    return guard;
+  }
 
   try {
     const body = await request.json();
+    logApiIncoming(label, request, body);
     const { meetingId, userId } = body;
 
     if (!meetingId || !userId) {
-      return NextResponse.json(
-        { error: "meetingId and userId are required." },
-        { status: 400 }
-      );
+      const payload = { error: "meetingId and userId are required." };
+      logApiOutgoing(label, 400, payload, startedAt);
+      return NextResponse.json(payload, { status: 400 });
     }
 
     const [meeting, user] = await Promise.all([
@@ -30,21 +36,33 @@ export async function POST(request: NextRequest) {
       prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, fcmToken: true } }),
     ]);
 
-    if (!meeting) return NextResponse.json({ error: "Meeting not found." }, { status: 404 });
-    if (!user) return NextResponse.json({ error: "User not found." }, { status: 404 });
+    if (!meeting) {
+      const payload = { error: "Meeting not found." };
+      logApiOutgoing(label, 404, payload, startedAt);
+      return NextResponse.json(payload, { status: 404 });
+    }
+    if (!user) {
+      const payload = { error: "User not found." };
+      logApiOutgoing(label, 404, payload, startedAt);
+      return NextResponse.json(payload, { status: 404 });
+    }
 
-    // Send FCM push notification if the user has a registered token
     if (user.fcmToken) {
       await sendPushNotification(user.fcmToken, {
         title: "Meeting Assigned",
-        body: `You have been assigned to meeting: "${meeting.title}"`,
+        body: `You have been assigned to meeting: \"${meeting.title}\"`,
         data: { meetingId, type: "MEETING_ASSIGNED" },
       });
     }
 
-    return NextResponse.json({ message: "Meeting assigned and notification sent." });
+    const payload = { message: "Meeting assigned and notification sent." };
+    logApiOutgoing(label, 200, payload, startedAt);
+    return NextResponse.json(payload);
   } catch (err: any) {
+    logApiError(label, err, startedAt);
     console.error("[MeetingAssign] error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const payload = { error: "Internal server error" };
+    logApiOutgoing(label, 500, payload, startedAt);
+    return NextResponse.json(payload, { status: 500 });
   }
 }

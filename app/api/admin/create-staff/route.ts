@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/rbac";
 import { getUserFromHeaders } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/mailer";
+import { logApiError, logApiIncoming, logApiOutgoing } from "@/lib/apiLogger";
 
 const createStaffSchema = z.object({
   name: z.string().min(2).max(50),
@@ -18,21 +19,28 @@ const createStaffSchema = z.object({
  * ADMIN or MANAGER can create Staff accounts.
  */
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const label = "POST /api/admin/create-staff";
+
   // RBAC guard – MANAGER or higher
   const guard = requireRole(request, "MANAGER");
-  if (guard) return guard;
+  if (guard) {
+    logApiOutgoing(label, guard.status, { error: "Forbidden" }, startedAt);
+    return guard;
+  }
 
   try {
     const body = await request.json();
+    logApiIncoming(label, request, body);
+
     const data = createStaffSchema.parse(body);
     const actor = getUserFromHeaders(request);
 
     const existing = await prisma.user.findUnique({ where: { email: data.email } });
     if (existing) {
-      return NextResponse.json(
-        { error: "A user with this email already exists." },
-        { status: 400 }
-      );
+      const payload = { error: "A user with this email already exists." };
+      logApiOutgoing(label, 400, payload, startedAt);
+      return NextResponse.json(payload, { status: 400 });
     }
 
     const rawPassword = data.password ?? Math.random().toString(36).slice(-10) + "A1!";
@@ -50,23 +58,34 @@ export async function POST(request: NextRequest) {
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
 
-    sendWelcomeEmail({
+    const emailResult = await sendWelcomeEmail({
       toEmail: staff.email,
       toName: staff.name,
       role: "Staff",
     });
 
-    console.log(`[Admin] Staff created: ${staff.email} by ${actor?.email}`);
-
-    return NextResponse.json(
-      { message: "Staff account created successfully.", user: staff },
-      { status: 201 }
+    console.log(
+      `[Admin] Staff created: ${staff.email} by ${actor?.email}. ` +
+        `emailSent=${emailResult.sent}`
     );
+
+    const payload = {
+      message: "Staff account created successfully.",
+      user: staff,
+      email: emailResult,
+    };
+    logApiOutgoing(label, 201, payload, startedAt);
+    return NextResponse.json(payload, { status: 201 });
   } catch (err: any) {
     if (err.name === "ZodError") {
-      return NextResponse.json({ error: "Validation failed", details: err.errors }, { status: 400 });
+      const payload = { error: "Validation failed", details: err.errors };
+      logApiOutgoing(label, 400, payload, startedAt);
+      return NextResponse.json(payload, { status: 400 });
     }
+    logApiError(label, err, startedAt);
     console.error("[Admin] create-staff error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    const payload = { error: "Internal server error" };
+    logApiOutgoing(label, 500, payload, startedAt);
+    return NextResponse.json(payload, { status: 500 });
   }
 }

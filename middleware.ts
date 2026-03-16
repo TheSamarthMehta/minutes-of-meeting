@@ -28,6 +28,16 @@ function hasMinRole(userRole: string, minRole: string): boolean {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isApiRoute = pathname.startsWith("/api/");
+
+  if (isApiRoute) {
+    console.log("[API TRACE]", {
+      method: request.method,
+      path: pathname,
+      query: Object.fromEntries(request.nextUrl.searchParams.entries()),
+      at: new Date().toISOString(),
+    });
+  }
 
   // Allow public routes
   if (publicRoutes.some((route) => pathname.startsWith(route))) {
@@ -57,6 +67,10 @@ export async function middleware(request: NextRequest) {
   // If no token and no NextAuth session, redirect to login for page routes, return 401 for API routes
   if (!token && !nextAuthToken) {
     if (pathname.startsWith("/api/")) {
+      console.log("[API TRACE] unauthorized (no token)", {
+        method: request.method,
+        path: pathname,
+      });
       return NextResponse.json(
         { error: "Unauthorized - No token provided" },
         { status: 401 }
@@ -74,6 +88,10 @@ export async function middleware(request: NextRequest) {
 
     if (!nextAuthPayload?.id || !nextAuthPayload?.email) {
       if (pathname.startsWith("/api/")) {
+        console.log("[API TRACE] unauthorized (invalid session token)", {
+          method: request.method,
+          path: pathname,
+        });
         return NextResponse.json(
           { error: "Unauthorized - Invalid session token" },
           { status: 401 }
@@ -118,6 +136,10 @@ export async function middleware(request: NextRequest) {
 
   if (!payload) {
     if (pathname.startsWith("/api/")) {
+      console.log("[API TRACE] unauthorized (invalid custom token)", {
+        method: request.method,
+        path: pathname,
+      });
       return NextResponse.json(
         { error: "Unauthorized - Invalid token" },
         { status: 401 }
