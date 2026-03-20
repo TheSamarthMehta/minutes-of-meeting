@@ -184,7 +184,7 @@ export default function SignUpPage() {
   };
 
   const getPasswordStrengthColor = () => {
-    switch (passwordStrength) {
+    switch (passwordStrength.score) {
       case 0:
       case 1:
         return "bg-red-500";
@@ -200,7 +200,7 @@ export default function SignUpPage() {
   };
 
   const getPasswordStrengthText = () => {
-    switch (passwordStrength) {
+    switch (passwordStrength.score) {
       case 0:
       case 1:
         return "Weak";
