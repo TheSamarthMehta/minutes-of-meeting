@@ -15,6 +15,8 @@ import { useRouter } from "next/navigation";
 import { DynamicSelect } from "@/app/components/DynamicSelect";
 import { useToast } from "@/app/components/ui/toast";
 import { useAuthStore } from "@/lib/store/authStore";
+import DatePickerDemo from "@/app/components/DatePickerDemo";
+import TimePickerDemo from "@/app/components/TimePickerDemo";
 
 interface MeetingType {
   id: string;
@@ -518,23 +520,20 @@ export default function CreateMeetingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Date <span className="text-red-400">*</span>
-              </label>
-              <NativePickerField
-                name="date"
-                type="date"
-                value={formData.date}
-                onChange={(value) => {
-                  setFormData({ ...formData, date: value });
+              <DatePickerDemo
+                label="Date"
+                value={formData.date ? new Date(formData.date) : undefined}
+                onChange={(date) => {
+                  const dateString = date
+                    ? date.toISOString().split("T")[0]
+                    : "";
+                  setFormData({ ...formData, date: dateString });
                   if (errors.date) {
                     setErrors({ ...errors, date: "" });
                   }
                 }}
-                placeholder="Select a date"
-                icon={<Calendar className="w-4 h-4" />}
-                error={errors.date}
-                min={todayMinDate}
+                id="date"
+                isRequired={true}
               />
               {errors.date && (
                 <p className="mt-1 text-sm text-red-400">{errors.date}</p>
@@ -542,12 +541,8 @@ export default function CreateMeetingPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Start Time <span className="text-red-400">*</span>
-              </label>
-              <NativePickerField
-                name="startTime"
-                type="time"
+              <TimePickerDemo
+                label="Start Time"
                 value={formData.startTime}
                 onChange={(value) => {
                   const shouldResetEnd =
@@ -565,24 +560,15 @@ export default function CreateMeetingPage() {
                     endTime: shouldResetEnd ? "" : errors.endTime,
                   });
                 }}
-                placeholder="Select start time"
-                icon={<Clock className="w-4 h-4" />}
+                id="startTime"
+                isRequired={true}
                 error={errors.startTime}
-                min={startTimeMin}
-                step={900}
               />
-              {errors.startTime && (
-                <p className="mt-1 text-sm text-red-400">{errors.startTime}</p>
-              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                End Time <span className="text-red-400">*</span>
-              </label>
-              <NativePickerField
-                name="endTime"
-                type="time"
+              <TimePickerDemo
+                label="End Time"
                 value={formData.endTime}
                 onChange={(value) => {
                   setFormData({ ...formData, endTime: value });
@@ -590,19 +576,14 @@ export default function CreateMeetingPage() {
                     setErrors({ ...errors, endTime: "" });
                   }
                 }}
-                placeholder="Select end time"
-                icon={<Clock className="w-4 h-4" />}
+                id="endTime"
+                isRequired={true}
                 error={errors.endTime}
-                min={endTimeMin}
-                step={900}
               />
               {!errors.endTime && formData.startTime && (
                 <p className="mt-1 text-xs text-gray-500">
                   End time should be after start time.
                 </p>
-              )}
-              {errors.endTime && (
-                <p className="mt-1 text-sm text-red-400">{errors.endTime}</p>
               )}
             </div>
           </div>
